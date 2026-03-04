@@ -1,4 +1,4 @@
-# Projekt_Zespo-owy-Koty_ISI
+# Projekt_Zespolowy-Koty_ISI
 Role:
 
 Kierownik- Paweł Rzadkowski
