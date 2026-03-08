@@ -5,3 +5,5 @@ pydantic-settings==2.6.1
 python-jose==3.3.0
 SQLAlchemy==2.0.36
 uvicorn==0.32.0
+dependency-injector==4.42.0
+fastapi==0.115.4
