@@ -1,8 +1,10 @@
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 import re
 
 class RegisterSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=True)
     password = serializers.CharField(write_only=True)
     email = serializers.EmailField(required=True)
 
@@ -21,6 +23,19 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         return value
 
+    def validate_password(self, value):
+        validate_password(value)
+        return value
+
+    def validate_username(self, value):
+        if len(value) < 4:
+            raise serializers.ValidationError("Username is too short, must be at least 4 characters.")
+        if len(value) > 30:
+            raise serializers.ValidationError("Username too long, must be at most 30 characters.")
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Username already taken")
+        return value
+
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         user.is_active = False
@@ -30,3 +45,13 @@ class RegisterSerializer(serializers.ModelSerializer):
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField()
     new_password = serializers.CharField()
+
+    def validate_new_password(self, value):
+        validate_password(value)
+        return value
+
+    def validate(self, data):
+        user = self.context['request'].user
+        if not user.check_password(data['old_password']):
+            raise serializers.ValidationError("Old password is incorrect")
+        return data
