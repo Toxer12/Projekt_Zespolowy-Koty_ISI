@@ -4,15 +4,19 @@ from django.shortcuts import render
 
 from rest_framework import generics
 from .serializers import RegisterSerializer
+from .serializers import ChangePasswordSerializer
 from django.shortcuts import get_object_or_404
-from rest_framework import status
 from django.contrib.auth import authenticate
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 from django.core.mail import send_mail
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
+from django.contrib.auth import login
+import uuid
+
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -27,8 +31,8 @@ class RegisterView(generics.CreateAPIView):
 
         send_mail(
             "Activate account",
-            f"Click: {activation_link}",
-            "noreply@test.com",
+            f'Hello {user.username}, here is your activation link: {activation_link}',
+            "ISI_Koty@test.com",
             [user.email],
         )
 
@@ -43,37 +47,19 @@ class ActivateUser(APIView):
 
 
 class LoginView(APIView):
-    def get(self, request):
-        return Response({
-            "detail": "Use POST with username and password"
-        })
-
     def post(self, request):
-        username = request.data.get("username")
-        password = request.data.get("password")
+        user = authenticate(
+            username=request.data["username"],
+            password=request.data["password"],
+        )
 
-        user = authenticate(username=username, password=password)
+        if user is None:
+            return Response({"error": "Invalid credentials"}, status=400)
 
-        if not user:
-            return Response(
-                {"error": "Invalid credentials"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        login(request, user)
 
-        if not user.is_active:
-            return Response(
-                {"error": "Account not active"},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        return Response({"status": "logged in"})
 
-        token, _ = Token.objects.get_or_create(user=user)
-
-        return Response({
-            "token": token.key
-        })
-
-
-import uuid
 
 reset_tokens = {}
 
@@ -97,9 +83,9 @@ class PasswordResetRequest(APIView):
         link = f"http://localhost:8000/api/reset/{token}/"
 
         send_mail(
-            "Reset password",
+            "Here is your password reset lin:",
             link,
-            "noreply@test.com",
+            "ISI_Koty@test.com",
             [email],
         )
 
@@ -121,6 +107,23 @@ class PasswordResetConfirm(APIView):
         user = User.objects.get(id=user_id)
 
         user.password = make_password(request.data["password"])
+        user.save()
+
+        return Response({"status": "password changed"})
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+
+        if not user.check_password(serializer.validated_data["old_password"]):
+            return Response({"error": "Wrong password"}, status=400)
+
+        user.password = make_password(serializer.validated_data["new_password"])
         user.save()
 
         return Response({"status": "password changed"})

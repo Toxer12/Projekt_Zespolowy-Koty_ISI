@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from web_app.views import RegisterView, LoginView, ActivateUser, PasswordResetRequest, PasswordResetConfirm
+from web_app.views import RegisterView, LoginView, ActivateUser, PasswordResetRequest, PasswordResetConfirm, ChangePasswordView
 
 
 #path('api/', include('web_app.urls')),
@@ -29,4 +29,5 @@ urlpatterns = [
     path('api/activate/<str:token>/', ActivateUser.as_view()),
     path('api/reset/', PasswordResetRequest.as_view()),
     path('api/reset/<str:token>/', PasswordResetConfirm.as_view()),
+    path('api/change-password/', ChangePasswordView.as_view()),
 ]
