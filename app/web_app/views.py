@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.contrib.auth import login
+from rest_framework import status
 import uuid
 
 
@@ -115,7 +116,7 @@ class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
+        serializer = ChangePasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         user = request.user
@@ -123,7 +124,18 @@ class ChangePasswordView(APIView):
         if not user.check_password(serializer.validated_data["old_password"]):
             return Response({"error": "Wrong password"}, status=400)
 
-        user.set_password(serializer.validated_data["new_password"])
+        user.password = make_password(serializer.validated_data["new_password"])
         user.save()
 
         return Response({"status": "password changed"})
+
+class DeleteAccountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        user = request.user
+        user.delete()
+        return Response(
+            {"status": "account deleted"},
+            status=status.HTTP_204_NO_CONTENT
+        )
