@@ -15,7 +15,7 @@ function Register() {
           Zarejestruj
         </button>
 
-        <button className="button" onClick={() => navigate("/login")}>
+        <button type="button" className="button" onClick={() => navigate("/login")}>
         Logowanie
         </button>
       </form>
