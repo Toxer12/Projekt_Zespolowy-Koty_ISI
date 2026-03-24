@@ -4,15 +4,17 @@ function Home() {
   const navigate = useNavigate();
 
   return (
-    <div style={{ textAlign: "center", marginTop: "100px" }}>
+    <div className="container">
 
-      <button onClick={() => navigate("/login")} style={{ margin: "10px" }}>
-        Logowanie
-      </button>
+      <div className="button-group">
+        <button className="button" onClick={() => navigate("/login")}>
+          Logowanie
+        </button>
 
-      <button onClick={() => navigate("/register")} style={{ margin: "10px" }}>
-        Rejestracja
-      </button>
+        <button className="button" onClick={() => navigate("/register")}>
+          Rejestracja
+        </button>
+      </div>
     </div>
   );
 }
