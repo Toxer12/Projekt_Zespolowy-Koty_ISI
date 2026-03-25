@@ -1,18 +1,13 @@
 // strona po zalogowaniu
 
 import { useNavigate } from "react-router-dom";
-
+import { logout } from "../../api";
 function Dashboard() {
   const navigate = useNavigate();
   const handleLogout = async () => {
-    try {
-      const data = await logout();
-      console.log(data);
-      navigate("/login");
-    } catch (err) {
-      console.error("Logout failed:", err);
-    }
-  };
+  logout();
+  navigate("/login");
+};
   return (
     <div className="container">
       <h2>Panel użytkownika</h2>

@@ -16,8 +16,11 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.contrib.auth import login
 from rest_framework import status
+from rest_framework_simplejwt.authentication import JWTAuthentication
 import uuid
 
+
+activation_tokens = {}
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -25,14 +28,16 @@ class RegisterView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = serializer.save()
+        user.is_active = False  # user is inactive until activation
 
-        token = Token.objects.create(user=user)
+        token = str(uuid.uuid4())
+        activation_tokens[token] = user.id
 
-        activation_link = f"http://localhost:8000/api/activate/{token.key}/"
+        activation_link = f"http://localhost:8000/api/activate/{token}/"
 
         send_mail(
             "Activate account",
-            f'Hello {user.username}, here is your activation link: {activation_link}',
+            f"Hello {user.username}, here is your activation link: {activation_link}",
             "ISI_Koty@test.com",
             [user.email],
         )
@@ -40,27 +45,16 @@ class RegisterView(generics.CreateAPIView):
 
 class ActivateUser(APIView):
     def get(self, request, token):
-        token = get_object_or_404(Token, key=token)
-        user = token.user
+        user_id = activation_tokens.get(token)
+        if not user_id:
+            return Response({"error": "Invalid token"}, status=400)
+
+        user = User.objects.get(id=user_id)
         user.is_active = True
         user.save()
+        del activation_tokens[token]
+
         return Response({"status": "activated"})
-
-
-class LoginView(APIView):
-    def post(self, request):
-        user = authenticate(
-            username=request.data["username"],
-            password=request.data["password"],
-        )
-
-        if user is None:
-            return Response({"error": "Invalid credentials"}, status=400)
-
-        login(request, user)
-
-        return Response({"status": "logged in"})
-
 
 reset_tokens = {}
 
@@ -81,7 +75,7 @@ class PasswordResetRequest(APIView):
         token = str(uuid.uuid4())
         reset_tokens[token] = user.id
 
-        link = f"http://localhost:8000/api/reset/{token}/"
+        link = f"http://localhost:5173/reset-password-confirm/{token}/"
 
         send_mail(
             "Here is your password reset lin:",
@@ -113,6 +107,7 @@ class PasswordResetConfirm(APIView):
         return Response({"status": "password changed"})
 
 class ChangePasswordView(APIView):
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -130,6 +125,7 @@ class ChangePasswordView(APIView):
         return Response({"status": "password changed"})
 
 class DeleteAccountView(APIView):
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
