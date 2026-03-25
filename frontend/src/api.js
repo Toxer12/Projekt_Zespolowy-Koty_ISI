@@ -11,6 +11,10 @@ export async function register(data) {
 
   return res.json();
 }
-
+export async function logout() {
+  const res = await fetch(`${API}/logout/``, {
+    method: "POST",
+    credentials: "include",
+  });
   return res.json();
 }
