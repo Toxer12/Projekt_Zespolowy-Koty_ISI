@@ -10,9 +10,15 @@ services:
       POSTGRES_PASSWORD: mypassword
     ports:
       - "5432:5432"
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   web:
     build: ./app
@@ -25,19 +31,25 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       DB_NAME: mydb
       DB_USER: myuser
       DB_PASSWORD: mypassword
       DB_HOST: db
       DB_PORT: 5432
+    networks:
+      - backend
 
   mailhog:
     image: mailhog/mailhog
     ports:
       - "8025:8025"
       - "1025:1025"
+    networks:
+      - backend
+
   frontend:
     build: ./frontend
     environment:
@@ -46,6 +58,14 @@ services:
       - "5173:5173"
     depends_on:
       - web
+    networks:
+      - backend
 
 volumes:
   postgres_data:
+
+networks:
+  backend:
+    driver: bridge
+
+
