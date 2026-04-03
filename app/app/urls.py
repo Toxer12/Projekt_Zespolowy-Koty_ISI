@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from web_app.views import RegisterView, ActivateUser, PasswordResetRequest, PasswordResetConfirm, ChangePasswordView, DeleteAccountView
+from web_app.views import RegisterView, ActivateUser, PasswordResetRequest, PasswordResetConfirm, ChangePasswordView, DeleteAccountView, LoginView, LogoutView, CookieTokenRefreshView, MeView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -27,12 +27,14 @@ from rest_framework_simplejwt.views import (
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/login/', LoginView.as_view()),
+    path('api/logout/', LogoutView.as_view()),
+    path('api/token/refresh/', CookieTokenRefreshView.as_view()),  # zamieniony
     path('api/register/', RegisterView.as_view()),
     path('api/activate/<str:token>/', ActivateUser.as_view()),
     path('api/reset/', PasswordResetRequest.as_view()),
     path('api/reset/<str:token>/', PasswordResetConfirm.as_view()),
     path('api/change-password/', ChangePasswordView.as_view()),
     path('api/delete-account/', DeleteAccountView.as_view()),
+    path('api/me/', MeView.as_view()),
 ]

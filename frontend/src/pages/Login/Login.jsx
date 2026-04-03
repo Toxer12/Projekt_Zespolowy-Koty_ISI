@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../../api";
 
@@ -8,18 +8,9 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      navigate("/dashboard");
-    }
-  }, [navigate]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
 
     try {
       await login({ username, password });

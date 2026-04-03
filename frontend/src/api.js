@@ -1,50 +1,46 @@
 const API = import.meta.env.VITE_API_URL;
-
-let token = localStorage.getItem("access_token");
-
+ 
+async function refreshToken() {
+  const res = await fetch(`${API}/api/token/refresh/`, {
+    method: "POST",
+    credentials: "include",
+  });
+  return res.ok;
+}
+ 
 export async function request(path, options = {}) {
-  const token = localStorage.getItem("access_token");
   const headers = {
     "Content-Type": "application/json",
-    ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+    ...options.headers,
   };
 
-  const res = await fetch(`${API}${path}`, { headers, ...options });
+  const res = await fetch(`${API}${path}`, {
+    headers,
+    credentials: "include",
+    ...options,
+  });
+
+  if (res.status === 401) {
+    window.location.href = "/login";
+    return;
+  }
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
     throw new Error(error.detail || "Request failed");
   }
+
+  if (res.status === 204) return null;
   return res.json();
 }
 
-
 export const login = async (data) => {
-  const res = await fetch(`${API}/api/token/`, {
+  await request("/api/login/", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.detail || "Nieprawidłowa nazwa użytkownika lub hasło");
-  }
-
-  const result = await res.json();
-  if (!result.access || !result.refresh) {
-    throw new Error("Nieprawidłowa odpowiedź serwera");
-  }
-
-  localStorage.setItem("access_token", result.access);
-  localStorage.setItem("refresh_token", result.refresh);
-  token = result.access;
-  return result;
 };
 
-export const logout = () => {
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("refresh_token");
-  token = null;
-  return Promise.resolve();
+export const logout = async () => {
+  await request("/api/logout/", { method: "POST" });
 };

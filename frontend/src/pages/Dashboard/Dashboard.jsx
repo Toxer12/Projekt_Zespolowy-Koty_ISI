@@ -1,22 +1,20 @@
 // strona po zalogowaniu
 
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-
+import { useEffect } from "react";
 import { logout, request } from "../../api";
 
 function Dashboard() {
   const navigate = useNavigate();
-   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      navigate("/login");
-    }
-  }, [navigate]);
+
+  useEffect(() => {
+    request("/api/me/").catch(() => navigate("/login"));
+  }, []);
 
   const handleLogout = async () => {
-    logout();
+    await logout();
     navigate("/login");
+
   };
 
   const handleDeleteAccount = async () => {
@@ -31,22 +29,11 @@ function Dashboard() {
     if (!doubleConfirmed) return;
 
     try {
-      const token = localStorage.getItem("access_token");
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/delete-account/`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (res.ok) {
-        logout();
-        navigate("/login");
-      } else {
-        alert("Nie udało się usunąć konta.");
-      }
+      await request("/api/delete-account/", { method: "DELETE" });
+      await logout();
+      navigate("/login");
     } catch (error) {
-      alert("Błąd połączenia z serwerem.");
+      alert("Nie udało się usunąć konta: " + error.message);
     }
   };
 

@@ -17,6 +17,9 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login
 from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from web_app.auth import CookieJWTAuthentication
 import uuid
 
 
@@ -135,3 +138,67 @@ class DeleteAccountView(APIView):
             {"status": "account deleted"},
             status=status.HTTP_204_NO_CONTENT
         )
+
+class LoginView(APIView):
+    def post(self, request):
+        user = authenticate(
+            username=request.data.get("username"),
+            password=request.data.get("password")
+        )
+        if not user:
+            return Response({"detail": "Nieprawidłowe dane"}, status=401)
+
+        refresh = RefreshToken.for_user(user)
+        response = Response({"status": "ok"})
+        response.set_cookie(
+            key="access_token",
+            value=str(refresh.access_token),
+            httponly=True,
+            secure=False,
+            samesite="Lax",
+            max_age=3600,
+        )
+        response.set_cookie(
+            key="refresh_token",
+            value=str(refresh),
+            httponly=True,
+            secure=False,
+            samesite="Lax",
+            max_age=7 * 24 * 3600,
+        )
+        return response
+
+class LogoutView(APIView):
+    def post(self, request):
+        response = Response({"status": "ok"})
+        response.delete_cookie("access_token")
+        response.delete_cookie("refresh_token")
+        return response
+
+class CookieTokenRefreshView(APIView):
+    def post(self, request):
+        refresh_token = request.COOKIES.get("refresh_token")
+        if not refresh_token:
+            return Response({"error": "Brak refresh tokenu"}, status=401)
+
+        try:
+            refresh = RefreshToken(refresh_token)
+            response = Response({"status": "ok"})
+            response.set_cookie(
+                key="access_token",
+                value=str(refresh.access_token),
+                httponly=True,
+                secure=False,
+                samesite="Lax",
+                max_age=3600,
+            )
+            return response
+        except (TokenError, InvalidToken):
+            return Response({"error": "Nieprawidłowy refresh token"}, status=401)
+
+class MeView(APIView):
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({"username": request.user.username})
