@@ -16,9 +16,9 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.contrib.auth import login
 from rest_framework import status
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from rest_framework_simplejwt.authentication import JWTAuthentication # type: ignore
+from rest_framework_simplejwt.tokens import RefreshToken # type: ignore
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken # type: ignore
 from web_app.auth import CookieJWTAuthentication
 import uuid
 
@@ -37,7 +37,7 @@ class RegisterView(generics.CreateAPIView):
         token = str(uuid.uuid4())
         activation_tokens[token] = user.id
 
-        activation_link = f"http://localhost:8000/api/activate/{token}/"
+        activation_link = f"http://localhost:5173/activate/{token}/"
 
         send_mail(
             "Activate account",
