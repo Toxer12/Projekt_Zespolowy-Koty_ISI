@@ -31,7 +31,8 @@ class RegisterView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = serializer.save()
-        user.is_active = False  # user is inactive until activation
+        user.is_active = False
+        user.save()
 
         token = str(uuid.uuid4())
         activation_tokens[token] = user.id
@@ -110,7 +111,7 @@ class PasswordResetConfirm(APIView):
         return Response({"status": "password changed"})
 
 class ChangePasswordView(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -128,7 +129,7 @@ class ChangePasswordView(APIView):
         return Response({"status": "password changed"})
 
 class DeleteAccountView(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
