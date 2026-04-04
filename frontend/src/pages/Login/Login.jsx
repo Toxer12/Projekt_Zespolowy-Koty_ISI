@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../../App"
 
 function Login() {
@@ -8,14 +8,8 @@ function Login() {
   const navigate = useNavigate();
   const { login, checkAuth, isAuthenticated } = useAuth();
 
-useEffect(() => {
-    checkAuth();
-  }, []);
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
+  if (isAuthenticated === null) return null;
+    if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {

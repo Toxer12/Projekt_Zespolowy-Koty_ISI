@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { createContext, useState, useEffect, useContext } from "react";
-import api from "./api";
+import { createContext, useState, useEffect, useContext, useRef, useCallback } from "react";
+import api, { setupInterceptors } from "./api";
 
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
@@ -11,13 +11,25 @@ import ProtectedRoute from "./ProtectedRoute";
 import ChangePassword from "./pages/ChangePassword/ChangePassword"
 
 const AuthContext = createContext();
-
-export function useAuth() {
-  return useContext(AuthContext);
-}
+export function useAuth() { return useContext(AuthContext); }
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const logoutRef = useRef(null);
+
+  const login = useCallback(() => setIsAuthenticated(true), []);
+  const logout = useCallback(() => setIsAuthenticated(false), []);
+
+  // Keep ref current so interceptor always calls the latest logout
+  logoutRef.current = logout;
+
+  useEffect(() => {
+    setupInterceptors(() => logoutRef.current());
+  }, []);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
   const checkAuth = async () => {
     try {
@@ -27,9 +39,6 @@ function App() {
       setIsAuthenticated(false);
     }
   };
-
-  const login = () => setIsAuthenticated(true);
-  const logout = () => setIsAuthenticated(false);
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, login, logout, checkAuth }}>

@@ -1,31 +1,32 @@
 import { useEffect } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./App";
-import api from "./api";
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, checkAuth } = useAuth();
-  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      api.get("/my/")
-        .then(() => {})
-        .catch(() => navigate("/login"));
-    }
-  }, [isAuthenticated, navigate]);
+    checkAuth();
+  }, [location.pathname]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      checkAuth();
-    }, 1000);
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") checkAuth();
+    };
+    const handleFocus = () => checkAuth();
 
-    return () => clearInterval(interval);
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, [checkAuth]);
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
 
+  if (isAuthenticated === null) return null;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 }
 

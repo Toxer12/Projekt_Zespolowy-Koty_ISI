@@ -119,42 +119,51 @@ class LoginView(APIView):
         return response
 
 class RefreshView(APIView):
-    authentication_classes = (SessionAuthentication,)  # enforce CSRF
-
+    authentication_classes = (SessionAuthentication,)
     def post(self, request):
         refresh_token = request.COOKIES.get('refresh_token')
-
         if not refresh_token:
-            return Response({'error': 'No refresh token'}, status=400)
+            return Response({'error': 'No refresh token'}, status=401)
 
         try:
             refresh = RefreshToken(refresh_token)
             access_token = str(refresh.access_token)
+            new_refresh = str(refresh)
         except TokenError:
-            return Response({'error': 'Invalid token'}, status=401)
+            return Response({'error': 'Invalid or expired token'}, status=401)
 
         response = Response({'message': 'Token refreshed'})
-
         response.set_cookie(
-            key='access_token',
-            value=access_token,
-            httponly=True,
-            secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+            key='access_token', value=access_token,
+            httponly=True, secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
             samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
-            path='/',
-            max_age=60 * 15,
+            path='/', max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
         )
-
+        response.set_cookie(
+            key='refresh_token', value=new_refresh,
+            httponly=True, secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+            samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
+            path='/', max_age=settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds(),
+        )
         return response
 
 class LogoutView(APIView):
     authentication_classes = (SessionAuthentication,)
+
     def post(self, request):
+        refresh_token = request.COOKIES.get('refresh_token')
         response = Response({'message': 'Logged out'})
         response.delete_cookie('access_token')
         response.delete_cookie('refresh_token')
-        return response
 
+        if refresh_token:
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except TokenError:
+                pass
+
+        return response
 class ChangePasswordView(APIView):
     authentication_classes = (CookieJWTAuthentication, SessionAuthentication)
     permission_classes = [IsAuthenticated]

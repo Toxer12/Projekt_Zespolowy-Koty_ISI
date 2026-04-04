@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../../App";
 function Register() {
   const [form, setForm] = useState({ username: "", email: "", password: "" });
@@ -8,15 +8,9 @@ function Register() {
   const navigate = useNavigate();
 const { checkAuth, isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
+  if (isAuthenticated === null) return null;
+    if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
