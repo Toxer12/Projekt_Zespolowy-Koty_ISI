@@ -1,11 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../../api";
 import { useNavigate } from "react-router-dom";
-
+import { useAuth } from "../../App";
 function Register() {
   const [form, setForm] = useState({ username: "", email: "", password: "" });
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
+const { checkAuth, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -22,16 +33,16 @@ function Register() {
   };
 
   return (
-    <div>
-      <h1>Register</h1>
-      <form onSubmit={handleSubmit}>
-        <input name="username" placeholder="Username" onChange={handleChange} required />
-        <input name="email" type="email" placeholder="Email" onChange={handleChange} required />
-        <input name="password" type="password" placeholder="Password" onChange={handleChange} required />
-        <button type="submit">Register</button>
+    <div className="container">
+      <h1>Rejestracja</h1>
+      <form className="form" onSubmit={handleSubmit}>
+        <input className="input" name="username" placeholder="Username" onChange={handleChange} required />
+        <input className="input" name="email" type="email" placeholder="Email" onChange={handleChange} required />
+        <input className="input" name="password" type="password" placeholder="Password" onChange={handleChange} required />
+        <button className="button" type="submit">Register</button>
       </form>
       {message && <p>{message}</p>}
-      <p>Already have an account? <a href="/login">Login</a></p>
+      <p>Masz już konto? <a href="/login">Zaloguj się</a></p>
     </div>
   );
 }

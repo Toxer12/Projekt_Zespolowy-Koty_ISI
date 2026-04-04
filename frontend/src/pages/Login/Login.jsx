@@ -1,13 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../../api";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../App"
 
 function Login() {
-  const [form, setForm] = useState({ username: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "" });
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, checkAuth, isAuthenticated } = useAuth();
 
+useEffect(() => {
+    checkAuth();
+  }, []);
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
@@ -22,16 +30,16 @@ function Login() {
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "50px" }}>
-      <h1>Login</h1>
-      <form onSubmit={handleSubmit}>
-        <input name="username" placeholder="username" value={form.username} onChange={handleChange} required />
+    <div className="container">
+      <h1>Logowanie</h1>
+      <form className="form" onSubmit={handleSubmit}>
+        <input className="input" name="email" placeholder="Username" value={form.email} onChange={handleChange} required />
         <br /><br />
-        <input name="password" type="password" placeholder="Password" value={form.password} onChange={handleChange} required />
+        <input className="input" name="password" type="password" placeholder="Password" value={form.password} onChange={handleChange} required />
         <br /><br />
-        <button type="submit">Login</button>
+        <button className="button" type="submit">Login</button>
       </form>
-      <p>No account? <a href="/register">Register here</a></p>
+      <p>Nie masz konta? <a href="/register">Zarejestruj się</a></p>
     </div>
   );
 }

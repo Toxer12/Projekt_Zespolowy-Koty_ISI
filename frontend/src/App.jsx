@@ -7,6 +7,8 @@ import Register from "./pages/Register/Register";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import ActivationError from "./pages/ActivationError/ActivationError";
 import AlreadyActivated from "./pages/AlreadyActivated/AlreadyActivated";
+import ProtectedRoute from "./ProtectedRoute";
+import ChangePassword from "./pages/ChangePassword/ChangePassword"
 
 const AuthContext = createContext();
 
@@ -16,7 +18,6 @@ export function useAuth() {
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   const checkAuth = async () => {
     try {
@@ -24,34 +25,38 @@ function App() {
       setIsAuthenticated(true);
     } catch {
       setIsAuthenticated(false);
-    } finally {
-      setLoading(false);
     }
   };
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
 
   const login = () => setIsAuthenticated(true);
   const logout = () => setIsAuthenticated(false);
 
-  if (loading) return <div style={{ textAlign: "center", marginTop: "100px" }}>Loading...</div>;
-
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout, checkAuth }}>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
-          <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
           <Route path="/activation-error" element={<ActivationError />} />
           <Route path="/already-activated" element={<AlreadyActivated />} />
 
           <Route
             path="/dashboard"
-            element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />}
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
           />
+          <Route
+          path="/change-password"
+          element={
+            <ProtectedRoute>
+              <ChangePassword />
+            </ProtectedRoute>
+          }
+        />
 
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>

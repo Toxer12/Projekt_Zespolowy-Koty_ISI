@@ -15,7 +15,7 @@ from django.utils.encoding import force_bytes
 from django.core.mail import send_mail
 from django.urls import reverse
 
-from users.serializers import UserSerializer, AuthTokenSerializer
+from users.serializers import UserSerializer, AuthTokenSerializer, ChangePasswordSerializer
 
 from users.auth import CookieJWTAuthentication
 
@@ -153,6 +153,27 @@ class LogoutView(APIView):
         response = Response({'message': 'Logged out'})
         response.delete_cookie('access_token')
         response.delete_cookie('refresh_token')
+        return response
+
+class ChangePasswordView(APIView):
+    authentication_classes = (CookieJWTAuthentication, SessionAuthentication)
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.update(request.user, serializer.validated_data)
+
+        response = Response(
+            {"message": "Password changed successfully"},
+            status=status.HTTP_200_OK
+        )
+        response.delete_cookie('access_token')
+        response.delete_cookie('refresh_token')
+
         return response
 
 class MyView(APIView):

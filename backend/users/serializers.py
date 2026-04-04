@@ -1,6 +1,7 @@
-from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth import get_user_model, authenticate, password_validation
 from rest_framework import serializers
 from django.utils.translation import gettext as _
+from django.contrib.auth.hashers import check_password
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for the user object"""
@@ -28,6 +29,31 @@ class UserSerializer(serializers.ModelSerializer):
             user.save()
 
         return user
+
+User = get_user_model()
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(required=True, write_only=True)
+    confirm_password = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, data):
+        user = self.context['request'].user
+
+        if not check_password(data['old_password'], user.password):
+            raise serializers.ValidationError({"old_password": "Old password is incorrect."})
+
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError({"confirm_password": "New passwords do not match."})
+
+        password_validation.validate_password(data['new_password'], user)
+
+        return data
+
+    def update(self, instance, validated_data):
+        instance.set_password(validated_data['new_password'])
+        instance.save()
+        return instance
 
 class AuthTokenSerializer(serializers.Serializer):
     """Serializer for the user authentication object"""

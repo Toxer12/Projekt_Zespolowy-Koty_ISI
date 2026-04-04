@@ -8,6 +8,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
+  // Initial load of user data
   useEffect(() => {
     api.get("/my/")
       .then((res) => setUser(res.data))
@@ -20,15 +21,16 @@ function Dashboard() {
     } catch (err) {
       // ignore
     }
-    logout();           // ← important: this clears React state
+    logout();
     navigate("/login");
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "50px" }}>
+    <div className="container">
       <h1>Dashboard</h1>
       {user && <p>Welcome, {user.email}!</p>}
-      <button onClick={handleLogout}>Logout</button>
+      <button className="button" onClick={handleLogout}>Logout</button>
+      <button className="button" onClick={() => navigate("/change-password")}>Zmień hasło</button>
     </div>
   );
 }
