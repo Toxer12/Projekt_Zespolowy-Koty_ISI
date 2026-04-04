@@ -21,13 +21,11 @@ services:
       retries: 5
 
   web:
-    build: ./app
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
+    build: ./backend
     working_dir: /code
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
-      - ./app:/code
+      - ./backend:/code
     ports:
       - "8000:8000"
     depends_on:
@@ -39,6 +37,7 @@ services:
       DB_PASSWORD: mypassword
       DB_HOST: db
       DB_PORT: 5432
+      DJANGO_SECRET_KEY: "supersecretkey"
     networks:
       - backend
 
@@ -53,11 +52,12 @@ services:
   frontend:
     build: ./frontend
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=http://localhost:8000/api/users/
     ports:
       - "5173:5173"
     volumes:
       - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
     depends_on:
       - web
     networks:
@@ -69,5 +69,4 @@ volumes:
 networks:
   backend:
     driver: bridge
-
 

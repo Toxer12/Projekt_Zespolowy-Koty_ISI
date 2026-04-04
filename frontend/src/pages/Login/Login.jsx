@@ -1,73 +1,37 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import api from "../../api";
 import { useNavigate } from "react-router-dom";
-import { login } from "../../api";
+import { useAuth } from "../../App"
 
 function Login() {
+  const [form, setForm] = useState({ username: "", password: "" });
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const { login } = useAuth();
 
-  useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      navigate("/dashboard");
-    }
-  }, [navigate]);
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-
     try {
-      await login({ username, password });
+      await api.post("/login/", form);
+      login();                    // ← important
       navigate("/dashboard");
     } catch (err) {
-      setError("Nieprawidłowa nazwa użytkownika lub hasło");
+      alert(err.response?.data?.error || "Login failed");
     }
   };
 
   return (
-    <div className="container">
-      <h2>Logowanie</h2>
-      <form className="form" onSubmit={handleSubmit}>
-        <input
-          className="input"
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-        <input
-          className="input"
-          type="password"
-          placeholder="Hasło"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button className="button" type="submit">Zaloguj</button>
-        {error && <p style={{ color: "red" }}>{error}</p>}
-
-        <button
-          type="button"
-          className="button"
-          onClick={() => navigate("/register")}
-        >
-          Rejestracja
-        </button>
-
-        <button
-          type="button"
-          className="button"
-          onClick={() => navigate("/reset-password")}
-        >
-          Zmień hasło
-        </button>
+    <div style={{ textAlign: "center", marginTop: "50px" }}>
+      <h1>Login</h1>
+      <form onSubmit={handleSubmit}>
+        <input name="username" placeholder="username" value={form.username} onChange={handleChange} required />
+        <br /><br />
+        <input name="password" type="password" placeholder="Password" value={form.password} onChange={handleChange} required />
+        <br /><br />
+        <button type="submit">Login</button>
       </form>
+      <p>No account? <a href="/register">Register here</a></p>
     </div>
   );
 }
