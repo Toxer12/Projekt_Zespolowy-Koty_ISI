@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import api from "../../api";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../App"
+import "./Login.css";
 
 function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -27,14 +28,16 @@ function Login() {
     <div className="container">
       <h1>Logowanie</h1>
       <form className="form" onSubmit={handleSubmit}>
-        <input className="input" name="email" placeholder="Username" value={form.email} onChange={handleChange} required />
+        <input className="input" name="email" placeholder="Nazwa użytkownika" value={form.email} onChange={handleChange} required />
         <br /><br />
-        <input className="input" name="password" type="password" placeholder="Password" value={form.password} onChange={handleChange} required />
+        <input className="input" name="password" type="password" placeholder="Hasło" value={form.password} onChange={handleChange} required />
         <br /><br />
         <button className="button" type="submit">Login</button>
       </form>
-      <p>Nie masz konta? <a href="/register">Zarejestruj się</a></p>
-      <p>Zapomniałeś hasła? <a href="/reset-password"> Zresetuj je</a></p>
+      <p>Nie masz jeszcze konta?<Link to="/register" className="register-link"> Zarejestruj się</Link></p>
+      <br />
+      <p>Nie pamiętasz hasła?</p>
+      <button className="action-btn" onClick={() => navigate("/reset-password")}>Reset hasła</button>
     </div>
   );
 }

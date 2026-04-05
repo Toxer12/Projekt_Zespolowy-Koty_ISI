@@ -1,0 +1,13 @@
+.register-link {
+  color: #a07c2a;
+}
+
+.register-link:hover {
+  text-decoration: underline;
+}
+.register-link:visited {
+  color: #a07c2a;
+}
+.register-link:visited:hover {
+  text-decoration: underline;
+}

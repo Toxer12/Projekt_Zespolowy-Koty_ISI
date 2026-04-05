@@ -39,13 +39,18 @@ function Profile() {
         <div className="profile-card">
           <h2 className="card-title">Informacje o koncie</h2>
           {user && (
-            <div className="info-row">
-              <span className="info-label">Email</span>
-              <span className="info-value">{user.email}</span>
-            </div>
-          )}
+              <>
+                <div className="info-row">
+                  <span className="info-label">Nazwa użytkownika</span>
+                  <span className="info-value">{user.username}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Email</span>
+                  <span className="info-value">{user.email}</span>
+                </div>
+              </>
+            )}
         </div>
-
         <div className="profile-card">
           <h2 className="card-title">Bezpieczeństwo</h2>
           <div className="card-actions">
@@ -68,11 +73,11 @@ function Profile() {
         <div className="modal-overlay">
           <div className="modal">
             <h3 className="modal-title">Usuń konto</h3>
-            <p className="modal-desc">Tej akcji nie można cofnąć. Wpisz swoje hasło aby zaakceptować.</p>
+            <p className="modal-desc" style={{ color: "red" }}>UWAGA: Tej akcji nie można cofnąć. Wpisz swoje hasło aby zaakceptować.</p>
             <input
               className="modal-input"
               type="password"
-              placeholder="Current password"
+              placeholder="Aktualne hasło"
               value={deletePassword}
               onChange={(e) => setDeletePassword(e.target.value)}
             />

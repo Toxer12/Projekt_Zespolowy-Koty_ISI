@@ -25,7 +25,7 @@ function ChangePassword() {
 
     try {
       await api.post("/change-password/", form);
-      setMessage("Password changed successfully!");
+      setMessage("Hasło zmienione prawidłowo!");
       logout();
       navigate("/login");
     } catch (err) {
@@ -36,7 +36,7 @@ function ChangePassword() {
 
   return (
     <div className="container">
-      <h1>Change Password</h1>
+      <h1>Zmiana hasła</h1>
 
       {message && <p style={{ color: "green" }}>{message}</p>}
       {error && <p style={{ color: "red" }}>{error}</p>}
@@ -46,7 +46,7 @@ function ChangePassword() {
           className="input"
           type="password"
           name="old_password"
-          placeholder="Old Password"
+          placeholder="Stare hasło"
           value={form.old_password}
           onChange={handleChange}
           required
@@ -55,7 +55,7 @@ function ChangePassword() {
           className="input"
           type="password"
           name="new_password"
-          placeholder="New Password"
+          placeholder="Nowe hasło"
           value={form.new_password}
           onChange={handleChange}
           required
@@ -64,21 +64,21 @@ function ChangePassword() {
           className="input"
           type="password"
           name="confirm_password"
-          placeholder="Confirm New Password"
+          placeholder="Potwierdź hasło"
           value={form.confirm_password}
           onChange={handleChange}
           required
         />
 
-        <button type="submit" className="button">Change Password</button>
+        <button type="submit" className="button">Zmień hasło</button>
       </form>
 
       <button
-        className="button"
-        style={{ backgroundColor: "#e74c3c", marginTop: "15px" }}
-        onClick={() => navigate("/dashboard")}
+        className="action-btn"
+        style={{marginTop: "15px" }}
+        onClick={() => navigate("/profile")}
       >
-        Back to Dashboard
+        Powrót do profilu
       </button>
     </div>
   );

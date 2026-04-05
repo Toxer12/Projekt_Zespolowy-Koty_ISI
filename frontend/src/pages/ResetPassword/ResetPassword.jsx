@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import api from "../../api";
+import "./ResetPassword.css";
 
 function ResetPassword() {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ function ResetPassword() {
 
   return (
     <div className="container">
-      <h2>Zmiana hasła</h2>
+      <h2>Reset hasła</h2>
       <form className="form" onSubmit={handleSubmit}>
         <input
           className="input"
@@ -36,10 +37,9 @@ function ResetPassword() {
         <button className="button" type="submit">Wyślij link</button>
         {message && <p style={{ color: "green" }}>{message}</p>}
         {error && <p style={{ color: "red" }}>{error}</p>}
-        <button type="button" className="button" onClick={() => navigate("/login")}>
-          Powrót do logowania
-        </button>
       </form>
+      <br />
+      <Link to="/login" className="register-link">Powrót do logowania</Link>
     </div>
   );
 }
