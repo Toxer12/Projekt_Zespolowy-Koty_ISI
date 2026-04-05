@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { request } from "../../api";
+import api from "../../api";
 
 function ResetPasswordConfirm() {
   const navigate = useNavigate();
-  const { token } = useParams();
+  const { uidb64, token } = useParams();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,10 +21,7 @@ function ResetPasswordConfirm() {
     }
 
     try {
-      await request(`/api/reset/${token}/`, {
-        method: "POST",
-        body: JSON.stringify({ password }),
-      });
+      await api.post(`/reset-password/${uidb64}/${token}/`, { password });
       setMessage("Hasło zostało zmienione. Możesz się teraz zalogować.");
       setTimeout(() => navigate("/login"), 3000);
     } catch (err) {
@@ -52,11 +49,7 @@ function ResetPasswordConfirm() {
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
         />
-
-        <button className="button" type="submit">
-          Zmień hasło
-        </button>
-
+        <button className="button" type="submit">Zmień hasło</button>
         {message && <p style={{ color: "green" }}>{message}</p>}
         {error && <p style={{ color: "red" }}>{error}</p>}
       </form>

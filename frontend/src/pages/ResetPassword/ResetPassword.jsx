@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { request } from "../../api";
+import api from "../../api";
 
 function ResetPassword() {
   const navigate = useNavigate();
@@ -14,10 +14,7 @@ function ResetPassword() {
     setError("");
 
     try {
-      await request("/api/reset/", {
-        method: "POST",
-        body: JSON.stringify({ email }),
-      });
+      await api.post("/reset-password/", { email });
       setMessage("Link do zmiany hasła został wysłany na Twój email.");
     } catch (err) {
       setError("Wystąpił błąd. Spróbuj ponownie.");
@@ -36,17 +33,10 @@ function ResetPassword() {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <button className="button" type="submit">
-          Wyślij link
-        </button>
+        <button className="button" type="submit">Wyślij link</button>
         {message && <p style={{ color: "green" }}>{message}</p>}
         {error && <p style={{ color: "red" }}>{error}</p>}
-
-        <button
-          type="button"
-          className="button"
-          onClick={() => navigate("/login")}
-        >
+        <button type="button" className="button" onClick={() => navigate("/login")}>
           Powrót do logowania
         </button>
       </form>

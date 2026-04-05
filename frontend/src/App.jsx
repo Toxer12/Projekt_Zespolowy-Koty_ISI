@@ -9,6 +9,8 @@ import ActivationError from "./pages/ActivationError/ActivationError";
 import AlreadyActivated from "./pages/AlreadyActivated/AlreadyActivated";
 import ProtectedRoute from "./ProtectedRoute";
 import ChangePassword from "./pages/ChangePassword/ChangePassword"
+import ResetPassword from "./pages/ResetPassword/ResetPassword";
+import ResetPasswordConfirm from "./pages/ResetPasswordConfirm/ResetPasswordConfirm";
 
 const AuthContext = createContext();
 export function useAuth() { return useContext(AuthContext); }
@@ -48,7 +50,8 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/activation-error" element={<ActivationError />} />
           <Route path="/already-activated" element={<AlreadyActivated />} />
-
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/reset-password/:uidb64/:token" element={<ResetPasswordConfirm />} />
           <Route
             path="/dashboard"
             element={

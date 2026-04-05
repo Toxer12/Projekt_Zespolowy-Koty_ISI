@@ -185,6 +185,57 @@ class ChangePasswordView(APIView):
 
         return response
 
+class PasswordResetRequestView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request):
+        email = request.data.get("email")
+        try:
+            user = get_user_model().objects.get(email=email)
+        except get_user_model().DoesNotExist:
+            return Response({"status": "sent"})
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        link = f"http://localhost:5173/reset-password/{uid}/{token}/"
+
+        try:
+            send_mail(
+                subject="Password reset",
+                message=f"Click to reset your password: {link}",
+                from_email="noreply@example.com",
+                recipient_list=[email],
+            )
+        except Exception:
+            pass
+
+        return Response({"status": "sent"})
+
+
+class PasswordResetConfirmView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request, uidb64, token):
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = get_user_model().objects.get(pk=uid)
+        except Exception:
+            return Response({"error": "Invalid link"}, status=400)
+
+        if not default_token_generator.check_token(user, token):
+            return Response({"error": "Invalid or expired token"}, status=400)
+
+        password = request.data.get("password")
+        if not password:
+            return Response({"error": "Password is required"}, status=400)
+
+        user.set_password(password)
+        user.save()
+
+        return Response({"status": "password reset successful"})
+
 class DeleteAccountView(APIView):
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]

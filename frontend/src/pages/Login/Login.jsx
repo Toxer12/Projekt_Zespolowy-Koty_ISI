@@ -34,6 +34,7 @@ function Login() {
         <button className="button" type="submit">Login</button>
       </form>
       <p>Nie masz konta? <a href="/register">Zarejestruj się</a></p>
+      <p>Zapomniałeś hasła? <a href="/reset-password"> Zresetuj je</a></p>
     </div>
   );
 }
