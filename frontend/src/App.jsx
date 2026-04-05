@@ -46,7 +46,6 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-
           <Route path="/activation-error" element={<ActivationError />} />
           <Route path="/already-activated" element={<AlreadyActivated />} />
 

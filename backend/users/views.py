@@ -185,9 +185,37 @@ class ChangePasswordView(APIView):
 
         return response
 
+class DeleteAccountView(APIView):
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        password = request.data.get('password')
+        if not password:
+            return Response({'error': 'Password is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.check_password(password):
+            return Response({'error': 'Incorrect password'}, status=status.HTTP_400_BAD_REQUEST)
+
+        refresh_token = request.COOKIES.get('refresh_token')
+        if refresh_token:
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except TokenError:
+                pass
+
+        request.user.delete()
+
+        response = Response({"status": "account deleted"}, status=status.HTTP_204_NO_CONTENT)
+        response.delete_cookie('access_token')
+        response.delete_cookie('refresh_token')
+        return response
+
 class MyView(APIView):
     authentication_classes = (CookieJWTAuthentication, SessionAuthentication)
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         return Response({'email': request.user.email})
+
