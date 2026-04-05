@@ -1,75 +1,37 @@
 import { useEffect, useState } from "react";
 import api from "../../api";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../App";
 import "./Dashboard.css";
 
 function Dashboard() {
   const [user, setUser] = useState(null);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [deletePassword, setDeletePassword] = useState("");
-  const [deleteError, setDeleteError] = useState("");
-
-  const navigate = useNavigate();
-  const { logout } = useAuth();
 
   useEffect(() => {
-    api.get("/my/")
-      .then((res) => setUser(res.data))
-      .catch(() => navigate("/login"));
-  }, [navigate]);
-
-  const handleLogout = async () => {
-    try {
-      await api.post("/logout/");
-    } catch (err) {
-      // ignore
-    }
-    logout();
-    navigate("/login");
-  };
-    const handleDeleteAccount = async () => {
-      try {
-        await api.delete("/delete-account/", { data: { password: deletePassword } });
-        logout();
-        navigate("/login", { replace: true });
-      } catch (err) {
-        setDeleteError(err.response?.data?.error || "Failed to delete account");
-      }
-};
+    api.get("/my/").then((res) => setUser(res.data));
+  }, []);
 
   return (
-    <div className="container">
-      <h1>Dashboard</h1>
-      {user && <p>Welcome, {user.email}!</p>}
-      <button className="button" onClick={handleLogout}>Logout</button>
-      <button className="button" onClick={() => navigate("/change-password")}>Zmień hasło</button>
-      <button className="button" onClick={() => setShowConfirm(true)}  style={{ backgroundColor: "red", color: "white" }}>Usuń konto</button>
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <p className="page-eyebrow">Overview</p>
+          <h1 className="page-title">Dashboard</h1>
+        </div>
+        {user && <p className="welcome-text">Witaj, <strong>{user.username}</strong></p>}
+      </div>
 
-      {showConfirm && (
-          <div className="modal-overlay">
-            <div className="modal">
-              <p>Aby usunąć konto wpisz swoje hasło.</p>
-              <p style={{ color: "red"}}> UWAGA: Usunięcia nie da się odwrócić. </p>
-              <input
-                className="input"
-                type="password"
-                placeholder="Wprowadź hasło"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-              />
-              {deleteError && <p style={{ color: "red" }}>{deleteError}</p>}
-              <div className="modal-buttons">
-                <button className="button btn-confirm" onClick={handleDeleteAccount}>Tak, usuń</button>
-                <button className="button btn-cancel" onClick={() => {
-                  setShowConfirm(false);
-                  setDeletePassword("");
-                  setDeleteError("");
-                }}>Anuluj</button>
-              </div>
-            </div>
-          </div>
-        )}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <span className="stat-label">Projekty</span>
+          <span className="stat-value">0</span>
+        </div>
+      </div>
+
+      <div className="section">
+        <h2 className="section-title">Niedawno używane projekty</h2>
+        <div className="empty-state">
+          <p>Brak projektów. <a href="/projects">Stwórz nowy -></a></p>
+        </div>
+      </div>
     </div>
   );
 }

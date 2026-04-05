@@ -1,0 +1,16 @@
+.create-btn {
+  padding: 0.55rem 1.25rem;
+  background: var(--sidebar-bg);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.create-btn:hover {
+  background: #2a2a2a;
+}

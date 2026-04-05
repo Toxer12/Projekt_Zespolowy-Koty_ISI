@@ -268,5 +268,6 @@ class MyView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response({'email': request.user.email})
+        return Response({'email': request.user.email,
+                         'username': request.user.username,})
 

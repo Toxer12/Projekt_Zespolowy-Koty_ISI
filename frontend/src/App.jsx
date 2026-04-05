@@ -4,16 +4,24 @@ import api, { setupInterceptors } from "./api";
 
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
-import Dashboard from "./pages/Dashboard/Dashboard";
 import ActivationError from "./pages/ActivationError/ActivationError";
 import AlreadyActivated from "./pages/AlreadyActivated/AlreadyActivated";
-import ProtectedRoute from "./ProtectedRoute";
-import ChangePassword from "./pages/ChangePassword/ChangePassword"
 import ResetPassword from "./pages/ResetPassword/ResetPassword";
 import ResetPasswordConfirm from "./pages/ResetPasswordConfirm/ResetPasswordConfirm";
+import ChangePassword from "./pages/ChangePassword/ChangePassword";
+
+import DashboardLayout from "./components/DashboardLayout/DashboardLayout";
+import Dashboard from "./pages/Dashboard/Dashboard";
+import Profile from "./pages/Profile/Profile";
+import Projects from "./pages/Projects/Projects";
+
+import ProtectedRoute from "./ProtectedRoute";
 
 const AuthContext = createContext();
-export function useAuth() { return useContext(AuthContext); }
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
@@ -22,16 +30,7 @@ function App() {
   const login = useCallback(() => setIsAuthenticated(true), []);
   const logout = useCallback(() => setIsAuthenticated(false), []);
 
-  // Keep ref current so interceptor always calls the latest logout
   logoutRef.current = logout;
-
-  useEffect(() => {
-    setupInterceptors(() => logoutRef.current());
-  }, []);
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
 
   const checkAuth = async () => {
     try {
@@ -42,32 +41,47 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    setupInterceptors(() => logoutRef.current());
+  }, []);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, checkAuth }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout, checkAuth, setIsAuthenticated }}>
       <BrowserRouter>
         <Routes>
+          {/* Public routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/activation-error" element={<ActivationError />} />
           <Route path="/already-activated" element={<AlreadyActivated />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/reset-password/:uidb64/:token" element={<ResetPasswordConfirm />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-          path="/change-password"
-          element={
+
+          {/* Protected routes*/}
+          <Route path="/dashboard" element={
             <ProtectedRoute>
-              <ChangePassword />
+              <DashboardLayout><Dashboard /></DashboardLayout>
             </ProtectedRoute>
-          }
-        />
+          } />
+          <Route path="/projects" element={
+            <ProtectedRoute>
+              <DashboardLayout><Projects /></DashboardLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <DashboardLayout><Profile /></DashboardLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/change-password" element={
+            <ProtectedRoute>
+              <DashboardLayout><ChangePassword /></DashboardLayout>
+            </ProtectedRoute>
+          } />
 
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
