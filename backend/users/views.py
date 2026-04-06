@@ -11,6 +11,8 @@ from rest_framework_simplejwt.exceptions import TokenError
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.utils.encoding import force_bytes
 from django.core.mail import send_mail
 from django.urls import reverse
@@ -205,6 +207,11 @@ class PasswordResetConfirmView(APIView):
         password = request.data.get("password")
         if not password:
             return Response({"error": "Password is required"}, status=400)
+        
+        try:
+            validate_password(password, user)
+        except ValidationError as e:
+            return Response ({"password": e.messages}, status=400)
 
         user.set_password(password)
         user.save()

@@ -25,7 +25,15 @@ function ResetPasswordConfirm() {
       setMessage("Hasło zostało zmienione. Możesz się teraz zalogować.");
       setTimeout(() => navigate("/login"), 3000);
     } catch (err) {
-      setError("Nie udało się zmienić hasła. Token mógł wygasnąć.");
+      const data = err.response?.data;
+      if (data?.password) {
+        setError (Array.isArray(data.password) ? data.password[0] : data.password);
+      } else if (data?.error) {
+        setError(data.error);
+      } else {
+      setError("Nie udało się zmienić hasła.");
+      }
+
     }
   };
 
