@@ -1,37 +1,42 @@
 import { useEffect, useState } from "react";
 import api from "../../api";
-import { Navigate, useNavigate, Link } from "react-router-dom";
+import { Navigate, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../App"
 import "./Login.css";
 
 function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const { login, checkAuth, isAuthenticated } = useAuth();
+  const [searchParams] = useSearchParams();
+  const activated = searchParams.get("activated");
 
   if (isAuthenticated === null) return null;
-    if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
     try {
       await api.post("/login/", form);
-      login();                    // ← important
+      login();
       navigate("/dashboard");
-    } catch (err) {
-      alert(err.response?.data?.error || "Login failed");
+    } catch {
+      setError("Nieprawidłowa nazwa użytkownika lub hasło.");
     }
   };
 
   return (
     <div className="container">
       <h1>Logowanie</h1>
+      {activated && <p style={{ color: "green", fontSize: "0.85rem" }}>Konto aktywowane! Możesz się teraz zalogować.</p>}
       <form className="form" onSubmit={handleSubmit}>
         <input className="input" name="email" placeholder="Nazwa użytkownika" value={form.email} onChange={handleChange} required />
-        <br /><br />
         <input className="input" name="password" type="password" placeholder="Hasło" value={form.password} onChange={handleChange} required />
-        <br /><br />
+        {error && <p style={{ color: "red", fontSize: "0.85rem" }}>{error}</p>}
         <button className="button" type="submit">Login</button>
       </form>
       <p>Nie masz jeszcze konta?<Link to="/register" className="register-link"> Zarejestruj się</Link></p>

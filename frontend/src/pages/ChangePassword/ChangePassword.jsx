@@ -29,8 +29,15 @@ function ChangePassword() {
       logout();
       navigate("/login");
     } catch (err) {
-      const errData = err.response?.data || {};
-      setError(errData.old_password || errData.confirm_password || errData.new_password || "Failed to change password");
+          const data = err.response?.data;
+          if (data) {
+            const messages = Object.entries(data)
+              .map(([field, errors]) => Array.isArray(errors) ? errors[0] : errors)
+              .join(" | ");
+            setError(messages);
+          } else {
+            setError("Coś poszło nie tak.");
+          }
     }
   };
 

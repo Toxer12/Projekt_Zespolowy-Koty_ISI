@@ -53,32 +53,7 @@ class ActivateUserView(APIView):
             return redirect("http://localhost:5173/activation-error")
         user.is_active = True
         user.save()
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-
-        response = redirect("http://localhost:5173/dashboard")
-
-        response.set_cookie(
-            key='access_token',
-            value=access_token,
-            httponly=True,
-            secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-            samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
-            path='/',
-            max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
-        )
-
-        response.set_cookie(
-            key='refresh_token',
-            value=str(refresh),
-            httponly=True,
-            secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-            samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
-            path='/',
-            max_age=settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds(),
-        )
-
-        return response
+        return redirect("http://localhost:5173/login?activated=1")
 
 class LoginView(APIView):
     authentication_classes = (SessionAuthentication,)

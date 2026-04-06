@@ -6,6 +6,7 @@ import "./Register.css";
 function Register() {
   const [form, setForm] = useState({ username: "", email: "", password: "" });
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const { checkAuth, isAuthenticated } = useAuth();
 
@@ -18,14 +19,24 @@ function Register() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post("/register/", form);
-      setMessage("Konto stworzone. Sprawdź swój email.");
-    } catch (err) {
-      setMessage("Error: " + (err.response?.data?.detail || "Something went wrong"));
+  e.preventDefault();
+  setMessage("");
+  setError("");
+  try {
+    await api.post("/register/", form);
+    setMessage("Konto stworzone. Sprawdź swój email.");
+  } catch (err) {
+    const data = err.response?.data;
+    if (data) {
+      const messages = Object.entries(data)
+        .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors[0] : errors}`)
+        .join(" | ");
+      setError(messages);
+    } else {
+      setError("Coś poszło nie tak.");
     }
-  };
+  }
+};
 
   return (
     <div className="container">
@@ -36,7 +47,8 @@ function Register() {
         <input className="input" name="password" type="password" placeholder="Hasło" onChange={handleChange} required />
         <button className="button" type="submit">Zarejestruj się</button>
       </form>
-      {message && <p>{message}</p>}
+      {message && <p style={{ color: "green", fontSize: "0.85rem" }}>{message}</p>}
+      {error && <p style={{ color: "red", fontSize: "0.85rem" }}>{error}</p>}
       <p>Masz już konto? <Link to="/login" className="register-link"> Zaloguj się</Link></p>
     </div>
   );
