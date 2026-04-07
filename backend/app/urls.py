@@ -27,5 +27,6 @@ def csrf(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/users/', include('users.urls')),
+    path('api/projects/', include('projects.urls')),
     path('api/csrf/', csrf),
 ]

@@ -15,7 +15,7 @@ function ResetPassword() {
     setError("");
 
     try {
-      await api.post("/reset-password/", { email });
+      await api.post("/users/reset-password/", { email });
       setMessage("Link do zmiany hasła został wysłany na Twój email.");
     } catch (err) {
       setError("Wystąpił błąd. Spróbuj ponownie.");

@@ -1,0 +1,135 @@
+/* ── Detail card ── */
+.detail-card {
+  max-width: 580px;
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #1a1a1a;
+}
+.detail-row:last-child { border-bottom: none; }
+
+.detail-label {
+  width: 130px;
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.detail-value {
+  font-size: 0.875rem;
+  color: #aaa;
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+/* reuse from Projects.css */
+.tag-badge {
+  padding: 0.2rem 0.6rem;
+  background: #1c1c1c;
+  border: 1px solid #2e2e2e;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  color: #888;
+}
+
+.no-tags {
+  font-size: 0.75rem;
+  color: #333;
+  font-style: italic;
+}
+
+.visibility-pill {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+.visibility-pill.public  { background: #0d2318; color: #4ade80; border: 1px solid #1a4a2e; }
+.visibility-pill.private { background: #1a1a1a; color: #666;    border: 1px solid #2a2a2a; }
+
+/* ── Header actions ── */
+.header-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+/* ── Breadcrumb ── */
+.breadcrumb {
+  color: #555;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.breadcrumb:hover { color: #888; }
+.breadcrumb-sep { color: #333; }
+
+/* ── Delete overlay ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(2px);
+}
+
+.confirm-dialog {
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+  padding: 2rem;
+  width: 380px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.confirm-title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #e0e0e0;
+  font-weight: 600;
+}
+
+.confirm-desc {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #666;
+  line-height: 1.55;
+}
+
+.confirm-desc strong { color: #aaa; }
+
+.confirm-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+}
+
+/* ── state-msg reuse ── */
+.state-msg {
+  text-align: center;
+  padding: 3rem 0;
+  color: #555;
+  font-size: 0.9rem;
+}
+.state-msg.error { color: #f87171; }

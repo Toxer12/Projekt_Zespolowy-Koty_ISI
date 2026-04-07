@@ -21,7 +21,7 @@ function Login() {
     e.preventDefault();
     setError("");
     try {
-      await api.post("/login/", form);
+      await api.post("/users/login/", form);
       login();
       navigate("/dashboard");
     } catch {

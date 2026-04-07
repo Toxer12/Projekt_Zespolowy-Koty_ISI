@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { createContext, useState, useEffect, useContext, useRef, useCallback } from "react";
 import api, { setupInterceptors } from "./api";
 
+
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
 import ActivationError from "./pages/ActivationError/ActivationError";
@@ -14,6 +15,8 @@ import DashboardLayout from "./components/DashboardLayout/DashboardLayout";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Profile from "./pages/Profile/Profile";
 import Projects from "./pages/Projects/Projects";
+import NewProject from "./pages/NewProject/NewProject";
+import ProjectDetail from "./pages/ProjectDetail/ProjectDetail";
 
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -34,7 +37,7 @@ function App() {
 
   const checkAuth = async () => {
     try {
-      await api.get("/my/");
+      await api.get("/users/my/");
       setIsAuthenticated(true);
     } catch {
       setIsAuthenticated(false);
@@ -84,6 +87,16 @@ function App() {
           } />
 
           <Route path="*" element={<Navigate to="/login" />} />
+          <Route path="/projects/new" element={
+          <ProtectedRoute>
+            <DashboardLayout><NewProject /></DashboardLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/projects/:id" element={
+          <ProtectedRoute>
+            <DashboardLayout><ProjectDetail /></DashboardLayout>
+          </ProtectedRoute>
+        } />
         </Routes>
       </BrowserRouter>
     </AuthContext.Provider>
