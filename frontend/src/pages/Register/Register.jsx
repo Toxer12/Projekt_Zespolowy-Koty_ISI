@@ -23,7 +23,7 @@ function Register() {
   setMessage("");
   setError("");
   try {
-    await api.post("/register/", form);
+    await api.post("/users/register/", form);
     setMessage("Konto stworzone. Sprawdź swój email.");
   } catch (err) {
     const data = err.response?.data;

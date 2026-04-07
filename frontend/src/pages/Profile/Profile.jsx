@@ -13,12 +13,12 @@ function Profile() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.get("/my/").then((res) => setUser(res.data));
+    api.get("/users/my/").then((res) => setUser(res.data));
   }, []);
 
   const handleDeleteAccount = async () => {
     try {
-      await api.delete("/delete-account/", { data: { password: deletePassword } });
+      await api.delete("/users/delete-account/", { data: { password: deletePassword } });
       logout();
       navigate("/login", { replace: true });
     } catch (err) {

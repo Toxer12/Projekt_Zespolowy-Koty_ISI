@@ -1,7 +1,8 @@
 import axios from "axios";
 
+// 1. Zmieniony baseURL na główny katalog API
 const api = axios.create({
-  baseURL: "http://localhost:8000/api/users",
+  baseURL: "http://localhost:8000/api",
   withCredentials: true,
   xsrfCookieName: "csrftoken",
   xsrfHeaderName: "X-CSRFToken",
@@ -21,8 +22,8 @@ export const setupInterceptors = (logout) => {
     async (error) => {
       const original = error.config;
 
-      // Don't try to refresh if the refresh call itself failed
-      if (original.url?.includes("/refresh/")) {
+      // 2. Poprawiona ścieżka sprawdzająca refresh względem nowego baseURL
+      if (original.url?.includes("/users/refresh/")) {
         logout();
         return Promise.reject(error);
       }
@@ -38,7 +39,8 @@ export const setupInterceptors = (logout) => {
         isRefreshing = true;
 
         try {
-          await api.post("/refresh/");
+          // 3. Poprawiona ścieżka wywołania odświeżania tokena
+          await api.post("/users/refresh/");
           processQueue(null);
           return api(original);
         } catch (refreshError) {
