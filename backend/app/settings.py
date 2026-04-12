@@ -41,8 +41,22 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
-    'projects'
+    'projects',
+    'users',
 ]
+
+AUTH_USER_MODEL = 'users.User'
+
+MIGRATION_MODULES = {
+    'users': None,
+    'projects': None,
+    'auth': None,
+    'admin': None,
+    'contenttypes': None,
+    'sessions': None,
+    'messages': None,
+    'token_blacklist': None,
+}
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",

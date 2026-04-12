@@ -26,8 +26,8 @@ def make_client():
     return APIClient(enforce_csrf_checks=False)
 
 
-def create_active_user(email='test@example.com', password='Test1234', username='testuser'):
-    user = User.objects.create_user(username=username, email=email, password=password)
+def create_active_user(email='test@example.com', password='Test1234', name='testuser'):
+    user = User.objects.create_user(name=name, email=email, password=password)
     user.is_active = True
     user.save()
     return user
@@ -104,12 +104,12 @@ class DatabaseConfigurationTests(TestCase):
 
     def test_can_create_user_in_database(self):
         """Możliwe jest zapisanie użytkownika w bazie danych."""
-        user = User.objects.create_user(username='dbuser', email='db@example.com', password='Test1234')
+        user = User.objects.create_user(name='dbuser', email='db@example.com', password='Test1234')
         self.assertIsNotNone(user.pk)
 
     def test_user_is_retrieved_from_database(self):
         """Użytkownik zapisany w bazie może zostać odczytany."""
-        User.objects.create_user(username='retuser', email='retrieve@example.com', password='Test1234')
+        User.objects.create_user(name='retuser', email='retrieve@example.com', password='Test1234')
         user = User.objects.get(email='retrieve@example.com')
         self.assertEqual(user.email, 'retrieve@example.com')
 
@@ -117,13 +117,13 @@ class DatabaseConfigurationTests(TestCase):
         """API rejestracji odrzuca duplikat emaila (walidacja w serialiserze)."""
         from rest_framework.test import APIClient as _APIClient
         c = _APIClient(enforce_csrf_checks=False)
-        c.post(REGISTER_URL, {'email': 'unique@example.com', 'password': 'Valid1234', 'username': 'u1'}, format='json')
-        response = c.post(REGISTER_URL, {'email': 'unique@example.com', 'password': 'Valid1234', 'username': 'u2'}, format='json')
+        c.post(REGISTER_URL, {'email': 'unique@example.com', 'password': 'Valid1234', 'name': 'u1'}, format='json')
+        response = c.post(REGISTER_URL, {'email': 'unique@example.com', 'password': 'Valid1234', 'name': 'u2'}, format='json')
         self.assertEqual(response.status_code, 400)
 
     def test_user_model_fields_exist(self):
         """Model User ma wymagane pola: email, is_active, is_staff."""
-        user = User.objects.create_user(username='fuser', email='fields@example.com', password='Test1234')
+        user = User.objects.create_user(name='fuser', email='fields@example.com', password='Test1234')
         self.assertTrue(hasattr(user, 'email'))
         self.assertTrue(hasattr(user, 'is_active'))
         self.assertTrue(hasattr(user, 'is_staff'))
@@ -146,48 +146,48 @@ class UserRegistrationTests(APITestCase):
 
     def test_register_with_valid_data_returns_201(self):
         """Rejestracja z poprawnymi danymi zwraca status 201."""
-        payload = {'email': 'new@example.com', 'password': 'Valid1234', 'username': 'newuser'}
+        payload = {'email': 'new@example.com', 'password': 'Valid1234', 'name': 'newuser'}
         response = self.client.post(REGISTER_URL, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_registered_user_exists_in_database(self):
         """Po rejestracji użytkownik istnieje w bazie danych."""
-        payload = {'email': 'indb@example.com', 'password': 'Valid1234', 'username': 'indbuser'}
+        payload = {'email': 'indb@example.com', 'password': 'Valid1234', 'name': 'indbuser'}
         self.client.post(REGISTER_URL, payload, format='json')
         self.assertTrue(User.objects.filter(email='indb@example.com').exists())
 
     def test_registered_user_is_inactive_by_default(self):
         """Nowo zarejestrowany użytkownik ma is_active=False."""
-        payload = {'email': 'inactive@example.com', 'password': 'Valid1234', 'username': 'inactiveuser'}
+        payload = {'email': 'inactive@example.com', 'password': 'Valid1234', 'name': 'inactiveuser'}
         self.client.post(REGISTER_URL, payload, format='json')
         user = User.objects.get(email='inactive@example.com')
         self.assertFalse(user.is_active)
 
     def test_register_sends_activation_email(self):
         """Rejestracja wysyła email aktywacyjny."""
-        payload = {'email': 'email@example.com', 'password': 'Valid1234', 'username': 'emailuser'}
+        payload = {'email': 'email@example.com', 'password': 'Valid1234', 'name': 'emailuser'}
         self.client.post(REGISTER_URL, payload, format='json')
         self.assertGreater(len(mail.outbox), 0)
         self.assertIn('Activate', mail.outbox[0].subject)
 
     def test_register_without_password_returns_400(self):
         """Rejestracja bez hasła zwraca status 400."""
-        payload = {'email': 'nopass@example.com', 'username': 'nopass'}
+        payload = {'email': 'nopass@example.com', 'name': 'nopass'}
         response = self.client.post(REGISTER_URL, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_register_with_duplicate_email_returns_400(self):
         """Rejestracja z już istniejącym e-mailem zwraca status 400."""
         # Rejestruj przez API (serializer sprawdza unikalność emaila)
-        payload1 = {'email': 'dup@example.com', 'password': 'Valid1234', 'username': 'dup1'}
+        payload1 = {'email': 'dup@example.com', 'password': 'Valid1234', 'name': 'dup1'}
         self.client.post(REGISTER_URL, payload1, format='json')
-        payload2 = {'email': 'dup@example.com', 'password': 'Valid1234', 'username': 'dup2'}
+        payload2 = {'email': 'dup@example.com', 'password': 'Valid1234', 'name': 'dup2'}
         response = self.client.post(REGISTER_URL, payload2, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_register_with_weak_password_returns_400(self):
         """Rejestracja ze słabym hasłem zwraca 400."""
-        payload = {'email': 'weak@example.com', 'password': 'password', 'username': 'weakuser'}
+        payload = {'email': 'weak@example.com', 'password': 'password', 'name': 'weakuser'}
         response = self.client.post(REGISTER_URL, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -200,23 +200,23 @@ class PasswordHashingTests(TestCase):
 
     def test_password_is_not_stored_as_plaintext(self):
         """Hasło nie jest przechowywane w bazie jako plain text."""
-        user = User.objects.create_user(username='hashuser', email='hash@example.com', password='Test1234')
+        user = User.objects.create_user(name='hashuser', email='hash@example.com', password='Test1234')
         self.assertNotEqual(user.password, 'Test1234')
 
     def test_hashed_password_starts_with_algorithm_prefix(self):
         """Hasło jest zahashowane algorytmem Django."""
-        user = User.objects.create_user(username='algouser', email='algo@example.com', password='Test1234')
+        user = User.objects.create_user(name='algouser', email='algo@example.com', password='Test1234')
         known_prefixes = ('pbkdf2_sha256', 'argon2', 'bcrypt', 'scrypt')
         self.assertTrue(any(user.password.startswith(p) for p in known_prefixes))
 
     def test_check_password_returns_true_for_correct_password(self):
         """check_password zwraca True dla poprawnego hasła."""
-        user = User.objects.create_user(username='checkuser', email='check@example.com', password='Test1234')
+        user = User.objects.create_user(name='checkuser', email='check@example.com', password='Test1234')
         self.assertTrue(user.check_password('Test1234'))
 
     def test_check_password_returns_false_for_wrong_password(self):
         """check_password zwraca False dla błędnego hasła."""
-        user = User.objects.create_user(username='wronguser', email='wrong@example.com', password='Test1234')
+        user = User.objects.create_user(name='wronguser', email='wrong@example.com', password='Test1234')
         self.assertFalse(user.check_password('WrongPass9'))
 
     def test_password_validator_rejects_short_password(self):
@@ -264,7 +264,7 @@ class EmailActivationTests(APITestCase):
         self.client = make_client()
 
     def _make_inactive_user(self):
-        user = User.objects.create_user(username='actuser', email='act@example.com', password='Test1234')
+        user = User.objects.create_user(name='actuser', email='act@example.com', password='Test1234')
         user.is_active = False
         user.save()
         return user
@@ -306,7 +306,7 @@ class EmailActivationTests(APITestCase):
 
     def test_registration_email_contains_activation_link(self):
         """Email wysłany po rejestracji zawiera link aktywacyjny."""
-        payload = {'email': 'linkcheck@example.com', 'password': 'Valid1234', 'username': 'linkcheckuser'}
+        payload = {'email': 'linkcheck@example.com', 'password': 'Valid1234', 'name': 'linkcheckuser'}
         self.client.post(REGISTER_URL, payload, format='json')
         self.assertGreater(len(mail.outbox), 0)
         self.assertIn('activate', mail.outbox[0].body)
@@ -365,7 +365,7 @@ class UserLoginTests(APITestCase):
         W rzeczywistości nieaktywny user dostaje 400 z serialisera.
         """
         inactive = User.objects.create_user(
-            username='inactive2', email='inactive2@example.com', password='Test1234'
+            name='inactive2', email='inactive2@example.com', password='Test1234'
         )
         inactive.is_active = False
         inactive.save()
@@ -391,7 +391,7 @@ class PasswordRecoveryTests(APITestCase):
 
     def setUp(self):
         self.client = make_client()
-        self.user = create_active_user(email='reset@example.com', password='OldPass1', username='resetuser')
+        self.user = create_active_user(email='reset@example.com', password='OldPass1', name='resetuser')
 
     def test_reset_request_with_existing_email_returns_200(self):
         """Żądanie resetu dla istniejącego emaila zwraca 200."""
@@ -455,7 +455,7 @@ class PasswordChangeTests(APITestCase):
 
     def setUp(self):
         self.client = make_client()
-        self.user = create_active_user(email='chpwd@example.com', password='OldPass1', username='chpwduser')
+        self.user = create_active_user(email='chpwd@example.com', password='OldPass1', name='chpwduser')
         login_client(self.client, email='chpwd@example.com', password='OldPass1')
 
     def test_change_password_with_valid_data_returns_200(self):
@@ -515,7 +515,7 @@ class DeleteAccountTests(APITestCase):
 
     def setUp(self):
         self.client = make_client()
-        self.user = create_active_user(email='del@example.com', password='DelPass1', username='deluser')
+        self.user = create_active_user(email='del@example.com', password='DelPass1', name='deluser')
         login_client(self.client, email='del@example.com', password='DelPass1')
 
     def test_delete_account_with_correct_password_returns_204(self):
@@ -551,3 +551,4 @@ class DeleteAccountTests(APITestCase):
         access_cookie = response.cookies.get('access_token')
         if access_cookie:
             self.assertEqual(access_cookie.value, '')
+
