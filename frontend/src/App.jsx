@@ -37,7 +37,7 @@ function App() {
 
   const checkAuth = async () => {
     try {
-      await api.get("/users/my/");
+      await api.get("/my/");
       setIsAuthenticated(true);
     } catch {
       setIsAuthenticated(false);

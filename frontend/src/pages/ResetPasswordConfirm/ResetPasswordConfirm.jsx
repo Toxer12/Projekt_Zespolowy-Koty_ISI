@@ -21,7 +21,7 @@ function ResetPasswordConfirm() {
     }
 
     try {
-      await api.post(`/users/reset-password/${uidb64}/${token}/`, { password });
+      await api.post(`/reset-password/${uidb64}/${token}/`, { password });
       setMessage("Hasło zostało zmienione. Możesz się teraz zalogować.");
       setTimeout(() => navigate("/login"), 3000);
     } catch (err) {

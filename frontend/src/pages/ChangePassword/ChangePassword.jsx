@@ -24,7 +24,7 @@ function ChangePassword() {
     setError("");
 
     try {
-      await api.post("/users/change-password/", form);
+      await api.post("/change-password/", form);
       setMessage("Hasło zmienione prawidłowo!");
       logout();
       navigate("/login");

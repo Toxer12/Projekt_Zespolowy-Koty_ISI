@@ -1,0 +1,202 @@
+/* ── Section ── */
+.doc-section {
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid #1c1c1c;
+}
+
+.doc-section-title {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 1.25rem;
+}
+
+/* ── Dropzone (7.2) ── */
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 2.25rem 1.5rem;
+  border: 1.5px dashed #2a2a2a;
+  border-radius: 12px;
+  background: #0d0d0d;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  user-select: none;
+  margin-bottom: 1.25rem;
+}
+
+.dropzone:hover   { border-color: #383838; background: #111; }
+.dropzone.active  { border-color: #555; background: #141414; }
+.dropzone.busy    { cursor: not-allowed; opacity: 0.6; }
+
+.dropzone-icon {
+  font-size: 1.5rem;
+  color: #444;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+.dropzone:hover .dropzone-icon,
+.dropzone.active .dropzone-icon { color: #888; }
+.dropzone.busy .dropzone-icon   { animation: spin 1s linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.dropzone-label {
+  font-size: 0.875rem;
+  color: #666;
+}
+.dropzone-hint {
+  font-size: 0.75rem;
+  color: #333;
+}
+
+/* ── Upload errors ── */
+.upload-errors {
+  background: #1a0a0a;
+  border: 1px solid #3a1a1a;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.upload-error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #f87171;
+}
+.upload-error strong { color: #fca5a5; }
+
+.clear-errors {
+  align-self: flex-end;
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 0.25rem;
+  transition: color 0.1s;
+}
+.clear-errors:hover { color: #888; }
+
+/* ── Document list ── */
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.doc-empty {
+  font-size: 0.85rem;
+  color: #444;
+  text-align: center;
+  padding: 1.5rem 0;
+  margin: 0;
+}
+
+/* ── Document row ── */
+.doc-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem 1rem;
+  background: #111;
+  border: 1px solid #1e1e1e;
+  border-radius: 10px;
+  transition: border-color 0.15s ease;
+}
+.doc-row:hover { border-color: #2a2a2a; }
+
+.doc-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+.doc-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.doc-name {
+  font-size: 0.875rem;
+  color: #ccc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doc-meta {
+  font-size: 0.72rem;
+  color: #444;
+}
+
+.doc-error {
+  font-size: 0.72rem;
+  color: #f87171;
+}
+
+/* ── Status badges ── */
+.doc-status {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.doc-status.pending    { background: #1a1a0d; color: #a3a300; border: 1px solid #2a2a00; }
+.doc-status.processing { background: #0d1a2a; color: #60a5fa; border: 1px solid #1a3a5a;
+                         animation: pulse 1.5s ease-in-out infinite; }
+.doc-status.ready      { background: #0d2318; color: #4ade80; border: 1px solid #1a4a2e; }
+.doc-status.error      { background: #1a0a0a; color: #f87171; border: 1px solid #3a1a1a; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+/* ── Actions ── */
+.doc-download {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #161616;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  color: #888;
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: background 0.15s, color 0.15s;
+}
+.doc-download:hover { background: #1e1e1e; color: #ccc; }
+
+.doc-delete {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #444;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.doc-delete:hover { background: #1a0a0a; border-color: #3a1a1a; color: #f87171; }

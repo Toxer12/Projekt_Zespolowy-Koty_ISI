@@ -6,7 +6,7 @@ function Dashboard() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    api.get("/users/my/").then((res) => setUser(res.data));
+    api.get("/my/").then((res) => setUser(res.data));
   }, []);
 
   return (

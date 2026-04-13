@@ -20,16 +20,32 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   web:
     build: ./backend
     working_dir: /code
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./backend:/code
+      - media_data:/code/media
     ports:
       - "8000:8000"
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       DB_NAME: mydb
@@ -38,6 +54,32 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       DJANGO_SECRET_KEY: "supersecretkey"
+      CELERY_BROKER_URL: "redis://redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+    networks:
+      - backend
+
+  celery_worker:
+    build: ./backend
+    working_dir: /code
+    command: celery -A app worker --loglevel=info
+    volumes:
+      - ./backend:/code
+      - media_data:/code/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DB_NAME: mydb
+      DB_USER: myuser
+      DB_PASSWORD: mypassword
+      DB_HOST: db
+      DB_PORT: 5432
+      DJANGO_SECRET_KEY: "supersecretkey"
+      CELERY_BROKER_URL: "redis://redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
     networks:
       - backend
 
@@ -65,8 +107,8 @@ services:
 
 volumes:
   postgres_data:
+  media_data:
 
 networks:
   backend:
     driver: bridge
-

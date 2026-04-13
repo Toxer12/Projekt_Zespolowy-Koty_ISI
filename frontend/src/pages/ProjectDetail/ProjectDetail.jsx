@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import api from "../../api";
+import { appApi } from "../../api";
 import "../NewProject/ProjectForm.css";
 import "./ProjectDetail.css";
+import DocumentUpload from "../DocumentUpload/DocumentUpload";
 
 function ProjectDetail() {
   const { id } = useParams();
@@ -25,7 +26,7 @@ function ProjectDetail() {
   const fetchProject = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/projects/${id}/`);
+      const res = await appApi.get(`/projects/${id}/`);
       setProject(res.data);
     } catch {
       setError("Nie znaleziono projektu.");
@@ -70,7 +71,7 @@ function ProjectDetail() {
     setSaving(true);
     setError(null);
     try {
-      const res = await api.patch(`/projects/${id}/`, { name: name.trim(), visibility, tags });
+      const res = await appApi.patch(`/projects/${id}/`, { name: name.trim(), visibility, tags });
       setProject(res.data);
       setEditing(false);
     } catch (err) {
@@ -83,7 +84,7 @@ function ProjectDetail() {
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      await api.delete(`/projects/${id}/`);
+      await appApi.delete(`/projects/${id}/`);
       navigate("/projects");
     } catch {
       setError("Nie udało się usunąć projektu.");
@@ -124,6 +125,7 @@ function ProjectDetail() {
       {/* View mode */}
       {!editing && (
         <div className="detail-card">
+            <DocumentUpload projectId={id} />
           <div className="detail-row">
             <span className="detail-label">Widoczność</span>
             <span className={`visibility-pill ${project.visibility}`}>

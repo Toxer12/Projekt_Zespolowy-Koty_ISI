@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../api";
+import { appApi } from "../../api";
 import "./ProjectForm.css";
 
 function NewProject() {
@@ -35,7 +35,7 @@ function NewProject() {
     setSaving(true);
     setError(null);
     try {
-      const res = await api.post("/projects/", { name: name.trim(), visibility, tags });
+      const res = await appApi.post("/projects/", { name: name.trim(), visibility, tags });
       navigate(`/projects/${res.data.id}`);
     } catch (err) {
       const msg = err.response?.data?.name?.[0] || "Nie udało się utworzyć projektu.";

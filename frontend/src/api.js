@@ -1,28 +1,41 @@
 import axios from "axios";
 
-// 1. Zmieniony baseURL na główny katalog API
-const api = axios.create({
-  baseURL: "http://localhost:8000/api",
+const BASE = "http://localhost:8000/api";
+
+const DEFAULT_CONFIG = {
   withCredentials: true,
   xsrfCookieName: "csrftoken",
   xsrfHeaderName: "X-CSRFToken",
+};
+
+// Instance dla użytkowników (auth, login, register, itd.)
+const api = axios.create({
+  ...DEFAULT_CONFIG,
+  baseURL: `${BASE}/users`,
 });
 
+// Instance dla projektów i dokumentów
+export const appApi = axios.create({
+  ...DEFAULT_CONFIG,
+  baseURL: BASE,
+});
+
+// ── Wspólna logika refresh ─────────────────────────────────────────────────
 let isRefreshing = false;
-let failedQueue = [];
+let failedQueue  = [];
 
 const processQueue = (error) => {
   failedQueue.forEach((prom) => error ? prom.reject(error) : prom.resolve());
   failedQueue = [];
 };
 
-export const setupInterceptors = (logout) => {
-  api.interceptors.response.use(
+const createInterceptor = (instance, logout) => {
+  instance.interceptors.response.use(
     (response) => response,
     async (error) => {
       const original = error.config;
 
-      // 2. Poprawiona ścieżka sprawdzająca refresh względem nowego baseURL
+      // Jeśli to sam /refresh/ się wyłożył — wyloguj
       if (original.url?.includes("/users/refresh/")) {
         logout();
         return Promise.reject(error);
@@ -32,17 +45,19 @@ export const setupInterceptors = (logout) => {
         if (isRefreshing) {
           return new Promise((resolve, reject) => {
             failedQueue.push({ resolve, reject });
-          }).then(() => api(original)).catch((err) => Promise.reject(err));
+          })
+            .then(() => instance(original))
+            .catch((err) => Promise.reject(err));
         }
 
-        original._retry = true;
-        isRefreshing = true;
+        original._retry  = true;
+        isRefreshing     = true;
 
         try {
-          // 3. Poprawiona ścieżka wywołania odświeżania tokena
-          await api.post("/users/refresh/");
+          // Refresh zawsze przez główne api (users instance)
+          await api.post("/refresh/");
           processQueue(null);
-          return api(original);
+          return instance(original);
         } catch (refreshError) {
           processQueue(refreshError);
           logout();
@@ -55,6 +70,11 @@ export const setupInterceptors = (logout) => {
       return Promise.reject(error);
     }
   );
+};
+
+export const setupInterceptors = (logout) => {
+  createInterceptor(api,    logout);
+  createInterceptor(appApi, logout);
 };
 
 export default api;

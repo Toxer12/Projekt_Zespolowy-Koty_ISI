@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import api from "../../api";
+import { appApi } from "../../api";
 import "./Projects.css";
 
 function TagBadge({ name }) {
@@ -49,7 +49,7 @@ function Projects() {
       const params = {};
       if (search)     params.search     = search;
       if (visibility) params.visibility = visibility;
-      const res = await api.get("/projects/", { params });
+      const res = await appApi.get("/projects/", { params });
       setProjects(res.data);
     } catch {
       setError("Nie udało się załadować projektów.");
