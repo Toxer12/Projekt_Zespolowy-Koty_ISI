@@ -9,9 +9,13 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    # Tagi przyjmujemy jako listę stringów (nazw), zwracamy tak samo
     tags  = serializers.ListField(
-        child=serializers.CharField(max_length=50),
+        child=serializers.CharField(
+            max_length=50,
+            error_messages={
+                'max_length': 'Tag nie może być dłuższy niż 50 znaków.',
+            }
+        ),
         required=False,
         default=list,
         write_only=True,
@@ -22,9 +26,17 @@ class ProjectSerializer(serializers.ModelSerializer):
         model  = Project
         fields = ('id', 'name', 'visibility', 'tags', 'owner', 'created_at', 'updated_at')
         read_only_fields = ('id', 'owner', 'created_at', 'updated_at')
+        extra_kwargs = {
+            'name': {
+                'error_messages': {
+                    'max_length': 'Nazwa projektu nie może przekraczać 255 znaków.',
+                    'blank':      'Nazwa projektu nie może być pusta.',
+                    'required':   'Nazwa projektu jest wymagana.',
+                }
+            }
+        }
 
     def to_representation(self, instance):
-        """Przy odczycie zamieniamy obiekty Tag → same nazwy (stringi)."""
         rep = super().to_representation(instance)
         rep['tags'] = [tag.name for tag in instance.tags.all()]
         return rep

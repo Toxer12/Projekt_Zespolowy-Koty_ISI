@@ -174,3 +174,8 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.tag-chip--error {
+  border-color: #5a2a2a;
+  color: #f87171;
+}

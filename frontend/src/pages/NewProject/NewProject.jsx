@@ -3,6 +3,32 @@ import { useNavigate } from "react-router-dom";
 import { appApi } from "../../api";
 import "./ProjectForm.css";
 
+// Parsuje błędy z DRF i zwraca czytelny komunikat po polsku
+function parseApiError(err) {
+  const data = err.response?.data;
+  if (!data) return "Nie udało się połączyć z serwerem.";
+
+  // Błąd pola name: { name: ["..."] }
+  if (data.name) return Array.isArray(data.name) ? data.name[0] : data.name;
+
+  // Błąd tagów: { tags: { "0": ["..."] } } lub { tags: ["..."] }
+  if (data.tags) {
+    if (Array.isArray(data.tags)) return `Tagi: ${data.tags[0]}`;
+    // DRF zwraca obiekt z kluczami będącymi indeksami: { "0": ["za długi tag"] }
+    const firstKey = Object.keys(data.tags)[0];
+    if (firstKey !== undefined) {
+      const msg = data.tags[firstKey];
+      return `Tag: ${Array.isArray(msg) ? msg[0] : msg}`;
+    }
+  }
+
+  // Błąd ogólny: { detail: "..." } lub { non_field_errors: ["..."] }
+  if (data.detail) return data.detail;
+  if (data.non_field_errors) return data.non_field_errors[0];
+
+  return "Nie udało się utworzyć projektu.";
+}
+
 function NewProject() {
   const navigate = useNavigate();
   const [name, setName]             = useState("");
@@ -30,16 +56,26 @@ function NewProject() {
     }
   };
 
+  // Walidacja po stronie klienta — żeby nie czekać na serwer
+  const validateLocally = () => {
+    if (!name.trim()) return "Nazwa projektu jest wymagana.";
+    if (name.length > 255) return "Nazwa projektu nie może przekraczać 255 znaków.";
+    const longTag = tags.find((t) => t.length > 50);
+    if (longTag) return `Tag "${longTag}" jest za długi (maks. 50 znaków).`;
+    return null;
+  };
+
   const handleSubmit = async () => {
-    if (!name.trim()) { setError("Nazwa projektu jest wymagana."); return; }
+    const localError = validateLocally();
+    if (localError) { setError(localError); return; }
+
     setSaving(true);
     setError(null);
     try {
       const res = await appApi.post("/projects/", { name: name.trim(), visibility, tags });
       navigate(`/projects/${res.data.id}`);
     } catch (err) {
-      const msg = err.response?.data?.name?.[0] || "Nie udało się utworzyć projektu.";
-      setError(msg);
+      setError(parseApiError(err));
     } finally {
       setSaving(false);
     }
@@ -70,6 +106,11 @@ function NewProject() {
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             autoFocus
           />
+          {name.length > 200 && (
+            <p className="form-hint" style={{ color: name.length > 255 ? "#f87171" : "#888" }}>
+              {name.length}/255 znaków
+            </p>
+          )}
         </div>
 
         {/* Widoczność */}
@@ -100,7 +141,7 @@ function NewProject() {
           <label className="form-label">Tagi</label>
           <div className="tags-input-wrap">
             {tags.map((t) => (
-              <span key={t} className="tag-chip">
+              <span key={t} className={`tag-chip ${t.length > 50 ? "tag-chip--error" : ""}`}>
                 {t}
                 <button className="tag-remove" onClick={() => removeTag(t)}>×</button>
               </span>
@@ -115,7 +156,7 @@ function NewProject() {
               onBlur={() => tagInput.trim() && addTag(tagInput)}
             />
           </div>
-          <p className="form-hint">Oddziel tagi Enterem, spacją lub przecinkiem.</p>
+          <p className="form-hint">Oddziel tagi Enterem, spacją lub przecinkiem · maks. 50 znaków.</p>
         </div>
 
         {error && <p className="form-error">{error}</p>}
