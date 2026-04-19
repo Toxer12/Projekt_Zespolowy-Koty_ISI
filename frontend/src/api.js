@@ -36,7 +36,7 @@ const createInterceptor = (instance, logout) => {
       const original = error.config;
 
       // Jeśli to sam /refresh/ się wyłożył — wyloguj
-      if (original.url?.includes("/users/refresh/")) {
+      if (original.url?.includes("/refresh/")) {
         logout();
         return Promise.reject(error);
       }
