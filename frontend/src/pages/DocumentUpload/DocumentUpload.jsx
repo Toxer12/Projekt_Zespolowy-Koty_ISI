@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { appApi } from "../../api";
 import "./DocumentUpload.css";
+import ChunkPreview from "../ChunkPreview/ChunkPreview";
 
 const ALLOWED_EXTENSIONS = ["pdf", "txt"];
 const MAX_SIZE_MB = 10;
@@ -40,7 +41,6 @@ function DocumentRow({ doc, onDelete, onStatusUpdate, projectId }) {
   const pollRef = useRef(null);
 
   useEffect(() => {
-    // Polling dla dokumentów w trakcie przetwarzania (7.4)
     if (doc.status === "pending" || doc.status === "processing") {
       pollRef.current = setInterval(async () => {
         try {
@@ -76,6 +76,7 @@ function DocumentRow({ doc, onDelete, onStatusUpdate, projectId }) {
         {doc.status === "error" && doc.error_message && (
           <span className="doc-error">{doc.error_message}</span>
         )}
+        <ChunkPreview documentId={doc.id} initialDoc={doc} />
       </div>
       <StatusBadge status={doc.status} />
       {doc.status === "ready" && doc.file_url && (
@@ -101,7 +102,6 @@ export default function DocumentUpload({ projectId }) {
   const [uploadErrors, setUploadErrors] = useState([]); // { name, message }[]
   const inputRef = useRef(null);
 
-  // Pobierz istniejące dokumenty projektu
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -120,7 +120,6 @@ export default function DocumentUpload({ projectId }) {
     const errors = [];
     const toUpload = [];
 
-    // Walidacja po stronie klienta (7.3)
     for (const file of files) {
       const err = validateFile(file);
       if (err) errors.push({ name: file.name, message: err });
@@ -153,7 +152,7 @@ export default function DocumentUpload({ projectId }) {
     setUploading(false);
   }, [projectId]);
 
-  // Drag & drop (7.2)
+  // Drag & drop
   const onDragOver  = (e) => { e.preventDefault(); setDragging(true); };
   const onDragLeave = ()  => setDragging(false);
   const onDrop      = (e) => {
@@ -174,7 +173,6 @@ export default function DocumentUpload({ projectId }) {
     <section className="doc-section">
       <h2 className="doc-section-title">Dokumenty</h2>
 
-      {/* Drop zone (7.1 + 7.2) */}
       <div
         className={`dropzone ${dragging ? "active" : ""} ${uploading ? "busy" : ""}`}
         onDragOver={onDragOver}
@@ -199,7 +197,6 @@ export default function DocumentUpload({ projectId }) {
         <span className="dropzone-hint">PDF i TXT · maks. 10 MB</span>
       </div>
 
-      {/* Błędy walidacji */}
       {uploadErrors.length > 0 && (
         <div className="upload-errors">
           {uploadErrors.map((e, i) => (
@@ -213,7 +210,6 @@ export default function DocumentUpload({ projectId }) {
         </div>
       )}
 
-      {/* Lista dokumentów (7.5 CRUD) */}
       {loading && <p className="doc-empty">Ładowanie…</p>}
       {!loading && docs.length === 0 && (
         <p className="doc-empty">Brak dokumentów. Dodaj pierwszy plik.</p>

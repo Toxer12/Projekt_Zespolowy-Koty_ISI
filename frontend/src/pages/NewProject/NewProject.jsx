@@ -3,18 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { appApi } from "../../api";
 import "./ProjectForm.css";
 
-// Parsuje błędy z DRF i zwraca czytelny komunikat po polsku
 function parseApiError(err) {
   const data = err.response?.data;
   if (!data) return "Nie udało się połączyć z serwerem.";
 
-  // Błąd pola name: { name: ["..."] }
   if (data.name) return Array.isArray(data.name) ? data.name[0] : data.name;
 
-  // Błąd tagów: { tags: { "0": ["..."] } } lub { tags: ["..."] }
   if (data.tags) {
     if (Array.isArray(data.tags)) return `Tagi: ${data.tags[0]}`;
-    // DRF zwraca obiekt z kluczami będącymi indeksami: { "0": ["za długi tag"] }
     const firstKey = Object.keys(data.tags)[0];
     if (firstKey !== undefined) {
       const msg = data.tags[firstKey];
@@ -22,7 +18,6 @@ function parseApiError(err) {
     }
   }
 
-  // Błąd ogólny: { detail: "..." } lub { non_field_errors: ["..."] }
   if (data.detail) return data.detail;
   if (data.non_field_errors) return data.non_field_errors[0];
 
@@ -56,7 +51,6 @@ function NewProject() {
     }
   };
 
-  // Walidacja po stronie klienta — żeby nie czekać na serwer
   const validateLocally = () => {
     if (!name.trim()) return "Nazwa projektu jest wymagana.";
     if (name.length > 255) return "Nazwa projektu nie może przekraczać 255 znaków.";
@@ -94,7 +88,6 @@ function NewProject() {
       </div>
 
       <div className="form-card">
-        {/* Nazwa */}
         <div className="form-group">
           <label className="form-label">Nazwa projektu</label>
           <input
@@ -113,7 +106,6 @@ function NewProject() {
           )}
         </div>
 
-        {/* Widoczność */}
         <div className="form-group">
           <label className="form-label">Widoczność</label>
           <div className="radio-group">
@@ -136,7 +128,6 @@ function NewProject() {
           </div>
         </div>
 
-        {/* Tagi */}
         <div className="form-group">
           <label className="form-label">Tagi</label>
           <div className="tags-input-wrap">

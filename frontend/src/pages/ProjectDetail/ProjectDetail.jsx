@@ -17,7 +17,6 @@ function ProjectDetail() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError]           = useState(null);
 
-  // edit state
   const [name, setName]             = useState("");
   const [visibility, setVisibility] = useState("private");
   const [tags, setTags]             = useState([]);
@@ -102,7 +101,6 @@ function ProjectDetail() {
 
   return (
     <div className="page">
-      {/* Header */}
       <div className="page-header">
         <div>
           <p className="page-eyebrow">
@@ -122,7 +120,6 @@ function ProjectDetail() {
         </div>
       </div>
 
-      {/* View mode */}
       {!editing && (
         <div className="detail-card">
             <DocumentUpload projectId={id} />
@@ -219,7 +216,6 @@ function ProjectDetail() {
         </div>
       )}
 
-      {/* Delete confirm */}
       {confirmDelete && (
         <div className="overlay">
           <div className="confirm-dialog">

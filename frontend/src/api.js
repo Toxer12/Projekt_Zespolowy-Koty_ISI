@@ -8,19 +8,16 @@ const DEFAULT_CONFIG = {
   xsrfHeaderName: "X-CSRFToken",
 };
 
-// Instance dla użytkowników (auth, login, register, itd.)
 const api = axios.create({
   ...DEFAULT_CONFIG,
   baseURL: `${BASE}/users`,
 });
 
-// Instance dla projektów i dokumentów
 export const appApi = axios.create({
   ...DEFAULT_CONFIG,
   baseURL: BASE,
 });
 
-// ── Wspólna logika refresh ─────────────────────────────────────────────────
 let isRefreshing = false;
 let failedQueue  = [];
 
@@ -35,7 +32,6 @@ const createInterceptor = (instance, logout) => {
     async (error) => {
       const original = error.config;
 
-      // Jeśli to sam /refresh/ się wyłożył — wyloguj
       if (original.url?.includes("/refresh/")) {
         logout();
         return Promise.reject(error);
@@ -54,7 +50,6 @@ const createInterceptor = (instance, logout) => {
         isRefreshing     = true;
 
         try {
-          // Refresh zawsze przez główne api (users instance)
           await api.post("/refresh/");
           processQueue(null);
           return instance(original);

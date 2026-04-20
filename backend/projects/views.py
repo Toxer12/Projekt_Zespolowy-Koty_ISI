@@ -10,10 +10,6 @@ from projects.serializers import ProjectSerializer, TagSerializer
 
 
 class ProjectListCreateView(generics.ListCreateAPIView):
-    """
-    GET  /api/projects/          – lista projektów zalogowanego usera
-    POST /api/projects/          – utwórz nowy projekt
-    """
     serializer_class       = ProjectSerializer
     authentication_classes = [CookieJWTAuthentication]
     permission_classes     = [IsAuthenticated]
@@ -24,12 +20,10 @@ class ProjectListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         qs = Project.objects.filter(owner=self.request.user).prefetch_related('tags')
 
-        # ?visibility=public / private
         visibility = self.request.query_params.get('visibility')
         if visibility in ('public', 'private'):
             qs = qs.filter(visibility=visibility)
 
-        # ?tag=python
         tag = self.request.query_params.get('tag')
         if tag:
             qs = qs.filter(tags__name=tag.strip().lower())
@@ -41,11 +35,6 @@ class ProjectListCreateView(generics.ListCreateAPIView):
 
 
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """
-    GET    /api/projects/<id>/   – szczegóły projektu
-    PATCH  /api/projects/<id>/   – edytuj projekt
-    DELETE /api/projects/<id>/   – usuń projekt
-    """
     serializer_class       = ProjectSerializer
     authentication_classes = [CookieJWTAuthentication]
     permission_classes     = [IsAuthenticated]
@@ -61,9 +50,6 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class PublicProjectListView(generics.ListAPIView):
-    """
-    GET /api/projects/public/    – publiczne projekty wszystkich userów (bez auth)
-    """
     serializer_class   = ProjectSerializer
     permission_classes = [AllowAny]
     filter_backends    = [filters.SearchFilter, filters.OrderingFilter]
@@ -77,9 +63,6 @@ class PublicProjectListView(generics.ListAPIView):
 
 
 class TagListView(generics.ListAPIView):
-    """
-    GET /api/projects/tags/      –  tagi (do autocomplete w formularwszystkiezu)
-    """
     serializer_class   = TagSerializer
     permission_classes = [AllowAny]
     queryset           = Tag.objects.all().order_by('name')
