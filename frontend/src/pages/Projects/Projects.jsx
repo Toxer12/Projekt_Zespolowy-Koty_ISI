@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { appApi } from "../../api";
 import "./Projects.css";
+
+const ROLE_LABELS = { owner: 'Właściciel', admin: 'Admin', editor: 'Edytor', viewer: 'Widz' };
 
 function TagBadge({ name }) {
   return <span className="tag-badge">{name}</span>;
@@ -11,11 +13,10 @@ function ProjectCard({ project, onClick }) {
   const date = new Date(project.created_at).toLocaleDateString("pl-PL", {
     day: "2-digit", month: "short", year: "numeric",
   });
-
   return (
     <article className="project-card" onClick={onClick}>
       <div className="project-card-top">
-        <span className={`visibility-dot ${project.visibility}`} title={project.visibility === "public" ? "Publiczny" : "Prywatny"} />
+        <span className={`visibility-dot ${project.visibility}`} />
         <span className="project-date">{date}</span>
       </div>
       <h3 className="project-name">{project.name}</h3>
@@ -34,13 +35,39 @@ function ProjectCard({ project, onClick }) {
   );
 }
 
+function SharedProjectCard({ project, onClick }) {
+  const date = new Date(project.created_at).toLocaleDateString("pl-PL", {
+    day: "2-digit", month: "short", year: "numeric",
+  });
+  return (
+    <article className="project-card" onClick={onClick}>
+      <div className="project-card-top">
+        <span className="project-owner-label">@{project.owner}</span>
+        <span className="project-date">{date}</span>
+      </div>
+      <h3 className="project-name">{project.name}</h3>
+      <div className="project-tags">
+        {project.tags.length > 0
+          ? project.tags.map((t) => <TagBadge key={t} name={t} />)
+          : <span className="no-tags">brak tagów</span>}
+      </div>
+      <div className="project-card-footer">
+        <span className="role-label">{ROLE_LABELS[project.my_role] ?? project.my_role}</span>
+        <span className="card-arrow">→</span>
+      </div>
+    </article>
+  );
+}
+
 function Projects() {
-  const navigate = useNavigate();
-  const [projects, setProjects]   = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [search, setSearch]       = useState("");
-  const [visibility, setVisibility] = useState("");
-  const [error, setError]         = useState(null);
+  const navigate                      = useNavigate();
+  const [projects, setProjects]       = useState([]);
+  const [shared, setShared]           = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [sharedLoading, setSharedLoading] = useState(true);
+  const [search, setSearch]           = useState("");
+  const [visibility, setVisibility]   = useState("");
+  const [error, setError]             = useState(null);
 
   const fetchProjects = async () => {
     setLoading(true);
@@ -58,14 +85,27 @@ function Projects() {
     }
   };
 
+  const fetchShared = async () => {
+    setSharedLoading(true);
+    try {
+      const res = await appApi.get("/projects/shared/");
+      setShared(res.data);
+    } catch {
+      // ignore
+    } finally {
+      setSharedLoading(false);
+    }
+  };
+
   useEffect(() => {
     const t = setTimeout(fetchProjects, 300);
     return () => clearTimeout(t);
   }, [search, visibility]);
 
+  useEffect(() => { fetchShared(); }, []);
+
   return (
     <div className="page">
-      {/* Header */}
       <div className="page-header">
         <div>
           <p className="page-eyebrow">Workspace</p>
@@ -76,7 +116,6 @@ function Projects() {
         </button>
       </div>
 
-      {/* Filters */}
       <div className="projects-toolbar">
         <input
           className="search-input"
@@ -98,7 +137,6 @@ function Projects() {
         </div>
       </div>
 
-      {/* Content */}
       {loading && <div className="state-msg">Ładowanie…</div>}
       {error   && <div className="state-msg error">{error}</div>}
 
@@ -115,13 +153,22 @@ function Projects() {
       {!loading && !error && projects.length > 0 && (
         <div className="projects-grid">
           {projects.map((p) => (
-            <ProjectCard
-              key={p.id}
-              project={p}
-              onClick={() => navigate(`/projects/${p.id}`)}
-            />
+            <ProjectCard key={p.id} project={p} onClick={() => navigate(`/projects/${p.id}`)} />
           ))}
         </div>
+      )}
+
+      {!sharedLoading && shared.length > 0 && (
+        <>
+          <div className="section-divider">
+            <span className="section-divider-label">Projekty innych użytkowników</span>
+          </div>
+          <div className="projects-grid">
+            {shared.map((p) => (
+              <SharedProjectCard key={p.id} project={p} onClick={() => navigate(`/projects/${p.id}`)} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

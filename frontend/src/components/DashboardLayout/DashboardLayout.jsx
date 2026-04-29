@@ -5,14 +5,10 @@ import "./DashboardLayout.css";
 
 function DashboardLayout({ children }) {
   const { logout } = useAuth();
-  const navigate = useNavigate();
+  const navigate   = useNavigate();
 
   const handleLogout = async () => {
-    try {
-      await api.post("/logout/");
-    } catch {
-      // ignore
-    }
+    try { await api.post("/logout/"); } catch { /* ignore */ }
     logout();
     navigate("/login");
   };
@@ -23,26 +19,34 @@ function DashboardLayout({ children }) {
         <div className="sidebar-top">
           <div className="sidebar-brand">
             <span className="brand-icon">◈</span>
-            <span className="brand-name">Dashboard</span>
+            <span className="brand-name">Projekt</span>
           </div>
           <nav className="sidebar-nav">
             <NavLink to="/dashboard" end className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
-              <span className="nav-icon">⌂</span>
-              <span>Strona główna</span>
-            </NavLink>
-            <NavLink to="/profile" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
-              <span className="nav-icon">☺</span>
-              <span>Profil użytkownika</span>
+              <span className="nav-icon">⊞</span>
+              <span>Dashboard</span>
             </NavLink>
             <NavLink to="/projects" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
               <span className="nav-icon">❏</span>
               <span>Moje projekty</span>
             </NavLink>
+            <NavLink to="/explore" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
+              <span className="nav-icon">◉</span>
+              <span>Odkryj</span>
+            </NavLink>
+            <NavLink to="/invites" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
+              <span className="nav-icon">✉</span>
+              <span>Zaproszenia</span>
+            </NavLink>
+            <NavLink to="/profile" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
+              <span className="nav-icon">◎</span>
+              <span>Profil</span>
+            </NavLink>
           </nav>
         </div>
         <div className="sidebar-bottom">
           <button className="logout-btn" onClick={handleLogout}>
-            <span className="nav-icon">☞</span>
+            <span className="nav-icon">⇥</span>
             <span>Wyloguj</span>
           </button>
         </div>

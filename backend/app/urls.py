@@ -29,7 +29,7 @@ def csrf(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/users/', include('users.urls')),
-    path('api/projects/', include('projects.urls')),
+    path('api/', include('projects.urls')),
     path('api/documents/', include('documents.urls')),
     path('api/csrf/', csrf),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

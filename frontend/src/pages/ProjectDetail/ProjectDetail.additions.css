@@ -1,0 +1,132 @@
+/* Add these to your existing ProjectDetail.css */
+
+/* ── Members panel ── */
+.members-panel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.members-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--content-text);
+}
+
+.members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.member-row:last-child {
+  border-bottom: none;
+}
+
+.member-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.member-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--content-text);
+}
+
+.member-email {
+  font-size: 0.75rem;
+  color: #aaa;
+}
+
+.role-pill {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.2rem 0.65rem;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.role-pill.role-owner  { background: #f0ede7; color: #555; }
+.role-pill.role-admin  { background: #fdf8ec; color: #c9a84c; }
+.role-pill.role-editor { background: #f0f7ff; color: #3b82f6; }
+.role-pill.role-viewer { background: #f5f5f5; color: #888; }
+
+.role-select {
+  font-size: 0.8rem;
+  font-family: 'DM Sans', sans-serif;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--content-text);
+  cursor: pointer;
+}
+
+.member-remove {
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.member-remove:hover {
+  color: #e05555;
+}
+
+.member-remove-placeholder {
+  width: 1.5rem;
+}
+
+/* ── Invite form ── */
+.invite-form {
+  border-top: 1px solid var(--border);
+  padding-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.invite-form-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.invite-fields {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.invite-fields .form-input {
+  flex: 1;
+  min-width: 160px;
+  margin: 0;
+}
+
+.form-success {
+  font-size: 0.82rem;
+  color: #4caf50;
+}

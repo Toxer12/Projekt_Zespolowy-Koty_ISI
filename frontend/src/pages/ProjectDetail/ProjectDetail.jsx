@@ -5,22 +5,172 @@ import "../NewProject/ProjectForm.css";
 import "./ProjectDetail.css";
 import DocumentUpload from "../DocumentUpload/DocumentUpload";
 
+const ROLE_LABELS = { owner: 'Właściciel', admin: 'Admin', editor: 'Edytor', viewer: 'Widz' };
+const ROLE_RANK   = { owner: 3, admin: 2, editor: 1, viewer: 0 };
+
+// ── Members panel ─────────────────────────────────────────────────────────
+
+function MembersPanel({ projectId, myRole }) {
+  const [members, setMembers]         = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [inviteUsername, setInviteUsername] = useState("");
+  const [inviteRole, setInviteRole]   = useState("viewer");
+  const [inviteError, setInviteError] = useState("");
+  const [inviteSuccess, setInviteSuccess] = useState("");
+  const [sending, setSending]         = useState(false);
+
+  const canManage = myRole === 'owner' || myRole === 'admin';
+  const inviteRoles = myRole === 'admin' ? ['editor', 'viewer'] : ['admin', 'editor', 'viewer'];
+
+  const fetchMembers = async () => {
+    try {
+      const res = await appApi.get(`/projects/${projectId}/members/`);
+      setMembers(res.data);
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchMembers(); }, [projectId]);
+
+  const handleInvite = async (e) => {
+    e.preventDefault();
+    if (!inviteUsername.trim()) return;
+    setSending(true);
+    setInviteError("");
+    setInviteSuccess("");
+    try {
+      await appApi.post(`/projects/${projectId}/members/invite/`, {
+        username: inviteUsername.trim(),
+        role: inviteRole,
+      });
+      setInviteSuccess(`Zaproszenie wysłane do "${inviteUsername}".`);
+      setInviteUsername("");
+    } catch (err) {
+      setInviteError(err.response?.data?.error || "Nie udało się wysłać zaproszenia.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleRoleChange = async (userId, newRole) => {
+    try {
+      const res = await appApi.patch(`/projects/${projectId}/members/${userId}/`, { role: newRole });
+      setMembers((prev) => prev.map((m) => m.user_id === userId ? { ...m, role: res.data.role } : m));
+    } catch (err) {
+      alert(err.response?.data?.error || "Błąd.");
+    }
+  };
+
+  const handleRemove = async (userId, userName) => {
+    if (!window.confirm(`Usunąć użytkownika "${userName}" z projektu?`)) return;
+    try {
+      await appApi.delete(`/projects/${projectId}/members/${userId}/`);
+      setMembers((prev) => prev.filter((m) => m.user_id !== userId));
+    } catch (err) {
+      alert(err.response?.data?.error || "Błąd.");
+    }
+  };
+
+  return (
+    <div className="members-panel">
+      <h2 className="members-title">Członkowie projektu</h2>
+
+      {loading && <p className="state-msg">Ładowanie…</p>}
+
+      {!loading && (
+        <div className="members-list">
+          {members.map((m) => {
+            const isOwner      = m.role === 'owner';
+            const canActOnThis = !isOwner && ROLE_RANK[myRole] > ROLE_RANK[m.role];
+
+            return (
+              <div key={m.user_id} className="member-row">
+                <div className="member-info">
+                  <span className="member-name">{m.user_name}</span>
+                  <span className="member-email">{m.user_email}</span>
+                </div>
+                {canActOnThis ? (
+                  <select
+                    className="role-select"
+                    value={m.role}
+                    onChange={(e) => handleRoleChange(m.user_id, e.target.value)}
+                  >
+                    {inviteRoles.map((r) => (
+                      <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className={`role-pill role-${m.role}`}>{ROLE_LABELS[m.role]}</span>
+                )}
+                {canActOnThis && (
+                  <button
+                    className="member-remove"
+                    onClick={() => handleRemove(m.user_id, m.user_name)}
+                    title="Usuń z projektu"
+                  >
+                    ×
+                  </button>
+                )}
+                {!canActOnThis && <span className="member-remove-placeholder" />}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {canManage && (
+        <form className="invite-form" onSubmit={handleInvite}>
+          <h3 className="invite-form-title">Zaproś użytkownika</h3>
+          <div className="invite-fields">
+            <input
+              className="form-input"
+              type="text"
+              placeholder="Nazwa użytkownika"
+              value={inviteUsername}
+              onChange={(e) => setInviteUsername(e.target.value)}
+            />
+            <select
+              className="role-select"
+              value={inviteRole}
+              onChange={(e) => setInviteRole(e.target.value)}
+            >
+              {inviteRoles.map((r) => (
+                <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+              ))}
+            </select>
+            <button className="create-btn" type="submit" disabled={sending}>
+              {sending ? "…" : "Zaproś"}
+            </button>
+          </div>
+          {inviteError   && <p className="form-error">{inviteError}</p>}
+          {inviteSuccess && <p className="form-success">{inviteSuccess}</p>}
+        </form>
+      )}
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────
+
 function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [project, setProject]       = useState(null);
-  const [loading, setLoading]       = useState(true);
-  const [editing, setEditing]       = useState(false);
-  const [saving, setSaving]         = useState(false);
-  const [deleting, setDeleting]     = useState(false);
+  const [project, setProject]           = useState(null);
+  const [loading, setLoading]           = useState(true);
+  const [editing, setEditing]           = useState(false);
+  const [saving, setSaving]             = useState(false);
+  const [deleting, setDeleting]         = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [error, setError]           = useState(null);
+  const [error, setError]               = useState(null);
 
-  const [name, setName]             = useState("");
-  const [visibility, setVisibility] = useState("private");
-  const [tags, setTags]             = useState([]);
-  const [tagInput, setTagInput]     = useState("");
+  const [name, setName]                 = useState("");
+  const [visibility, setVisibility]     = useState("private");
+  const [tags, setTags]                 = useState([]);
+  const [tagInput, setTagInput]         = useState("");
 
   const fetchProject = async () => {
     setLoading(true);
@@ -35,6 +185,11 @@ function ProjectDetail() {
   };
 
   useEffect(() => { fetchProject(); }, [id]);
+
+  const myRole   = project?.my_role ?? null;
+  const isOwner  = myRole === 'owner';
+  const canEdit  = isOwner;
+  const canUpload = myRole === 'owner' || myRole === 'admin' || myRole === 'editor';
 
   const startEdit = () => {
     setName(project.name);
@@ -56,13 +211,9 @@ function ProjectDetail() {
   const removeTag = (tag) => setTags((prev) => prev.filter((t) => t !== tag));
 
   const handleTagKeyDown = (e) => {
-    if (["Enter", ",", " "].includes(e.key)) {
-      e.preventDefault();
-      addTag(tagInput);
-    }
-    if (e.key === "Backspace" && tagInput === "" && tags.length > 0) {
+    if (["Enter", ",", " "].includes(e.key)) { e.preventDefault(); addTag(tagInput); }
+    if (e.key === "Backspace" && tagInput === "" && tags.length > 0)
       setTags((prev) => prev.slice(0, -1));
-    }
   };
 
   const handleSave = async () => {
@@ -92,6 +243,16 @@ function ProjectDetail() {
     }
   };
 
+  const handleLeave = async () => {
+    if (!window.confirm("Opuścić ten projekt?")) return;
+    try {
+      await appApi.post(`/projects/${id}/leave/`);
+      navigate("/projects");
+    } catch (err) {
+      alert(err.response?.data?.error || "Błąd.");
+    }
+  };
+
   const formatDate = (iso) => new Date(iso).toLocaleDateString("pl-PL", {
     day: "2-digit", month: "long", year: "numeric",
   });
@@ -111,18 +272,27 @@ function ProjectDetail() {
           <h1 className="page-title">{project.name}</h1>
         </div>
         <div className="header-actions">
-          {!editing && (
+          {!editing && canEdit && (
             <>
               <button className="ghost-btn" onClick={startEdit}>Edytuj</button>
               <button className="danger-btn" onClick={() => setConfirmDelete(true)}>Usuń</button>
             </>
+          )}
+          {!isOwner && (
+            <button className="ghost-btn" onClick={handleLeave}>Opuść projekt</button>
           )}
         </div>
       </div>
 
       {!editing && (
         <div className="detail-card">
-            <DocumentUpload projectId={id} />
+          {canUpload && <DocumentUpload projectId={id} />}
+          {!canUpload && (
+            <div className="doc-section">
+              <h2 className="doc-section-title">Dokumenty</h2>
+              <p className="doc-empty">Masz rolę Widz — możesz tylko przeglądać dokumenty.</p>
+            </div>
+          )}
           <div className="detail-row">
             <span className="detail-label">Widoczność</span>
             <span className={`visibility-pill ${project.visibility}`}>
@@ -138,6 +308,10 @@ function ProjectDetail() {
             </div>
           </div>
           <div className="detail-row">
+            <span className="detail-label">Twoja rola</span>
+            <span className={`role-pill role-${myRole}`}>{ROLE_LABELS[myRole]}</span>
+          </div>
+          <div className="detail-row">
             <span className="detail-label">Utworzono</span>
             <span className="detail-value">{formatDate(project.created_at)}</span>
           </div>
@@ -148,7 +322,7 @@ function ProjectDetail() {
         </div>
       )}
 
-      {/* Edit mode */}
+      {/* Edit form */}
       {editing && (
         <div className="form-card">
           <div className="form-group">
@@ -162,18 +336,13 @@ function ProjectDetail() {
               autoFocus
             />
           </div>
-
           <div className="form-group">
             <label className="form-label">Widoczność</label>
             <div className="radio-group">
               {[["private", "🔒 Prywatny", "Tylko Ty widzisz ten projekt"],
                 ["public",  "🌐 Publiczny", "Widoczny dla wszystkich"]].map(([val, label, desc]) => (
                 <label key={val} className={`radio-card ${visibility === val ? "selected" : ""}`}>
-                  <input
-                    type="radio" name="visibility" value={val}
-                    checked={visibility === val}
-                    onChange={() => setVisibility(val)}
-                  />
+                  <input type="radio" name="visibility" value={val} checked={visibility === val} onChange={() => setVisibility(val)} />
                   <div>
                     <span className="radio-label">{label}</span>
                     <span className="radio-desc">{desc}</span>
@@ -182,7 +351,6 @@ function ProjectDetail() {
               ))}
             </div>
           </div>
-
           <div className="form-group">
             <label className="form-label">Tagi</label>
             <div className="tags-input-wrap">
@@ -204,9 +372,7 @@ function ProjectDetail() {
             </div>
             <p className="form-hint">Oddziel tagi Enterem, spacją lub przecinkiem.</p>
           </div>
-
           {error && <p className="form-error">{error}</p>}
-
           <div className="form-actions">
             <button className="ghost-btn" onClick={cancelEdit}>Anuluj</button>
             <button className="create-btn" onClick={handleSave} disabled={saving}>
@@ -216,12 +382,16 @@ function ProjectDetail() {
         </div>
       )}
 
+      {/* Members panel */}
+      {myRole && <MembersPanel projectId={id} myRole={myRole} />}
+
+      {/* Delete confirm */}
       {confirmDelete && (
         <div className="overlay">
           <div className="confirm-dialog">
             <h3 className="confirm-title">Usunąć projekt?</h3>
             <p className="confirm-desc">
-              Projekt <strong>{project.name}</strong> zostanie trwale usunięty. Tej operacji nie można cofnąć.
+              Projekt <strong>{project.name}</strong> zostanie trwale usunięty.
             </p>
             <div className="confirm-actions">
               <button className="ghost-btn" onClick={() => setConfirmDelete(false)}>Anuluj</button>
