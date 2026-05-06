@@ -3,6 +3,7 @@ import { appApi } from "../../api";
 import "./ChunkPreview.css";
 
 const EMBEDDING_POLL_INTERVAL = 2500;
+const MAX_CHARS = 1000;
 
 function EmbeddingBadge({ status }) {
   const map = {
@@ -16,18 +17,24 @@ function EmbeddingBadge({ status }) {
   return <span className={`emb-badge emb-badge--${cls}`}>{label}</span>;
 }
 
-function ChunkItem({ chunk, canEdit, onSaved }) {
-  const [editing, setEditing]   = useState(false);
-  const [text, setText]         = useState(chunk.text);
-  const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState(null);
+function ChunkItem({ chunk, canEdit, onSaved, onDeleted }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText]       = useState(chunk.text);
+  const [saving, setSaving]   = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError]     = useState(null);
+
+  // Sync text if parent updates the chunk
+  useEffect(() => {
+    if (!editing) setText(chunk.text);
+  }, [chunk.text, editing]);
 
   const handleSave = async () => {
     if (!text.trim()) return;
     setSaving(true);
     setError(null);
     try {
-      const res = await appApi.patch(`/documents/chunks/${chunk.id}/`, { text });
+      const res = await appApi.patch(`/documents/chunks/${chunk.id}/`, { text: text.trim() });
       setEditing(false);
       onSaved(res.data);
     } catch (err) {
@@ -37,10 +44,26 @@ function ChunkItem({ chunk, canEdit, onSaved }) {
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm("Usunąć ten chunk?")) return;
+    setDeleting(true);
+    try {
+      await appApi.delete(`/documents/chunks/${chunk.id}/`);
+      onDeleted(chunk.id);
+    } catch (err) {
+      setError(err.response?.data?.error || "Nie udało się usunąć.");
+      setDeleting(false);
+    }
+  };
+
   const handleCancel = () => {
     setText(chunk.text);
     setEditing(false);
     setError(null);
+  };
+
+  const handleTextChange = (e) => {
+    if (e.target.value.length <= MAX_CHARS) setText(e.target.value);
   };
 
   return (
@@ -50,9 +73,12 @@ function ChunkItem({ chunk, canEdit, onSaved }) {
         <span className="chunk-chars">{chunk.char_count} zn.</span>
         <span className="chunk-type">{chunk.chunk_type}</span>
         {canEdit && !editing && (
-          <button className="chunk-edit-btn" onClick={() => setEditing(true)}>
-            Edytuj
-          </button>
+          <>
+            <button className="chunk-edit-btn" onClick={() => setEditing(true)}>Edytuj</button>
+            <button className="chunk-edit-btn chunk-delete-btn" onClick={handleDelete} disabled={deleting}>
+              {deleting ? "…" : "Usuń"}
+            </button>
+          </>
         )}
       </div>
 
@@ -61,13 +87,16 @@ function ChunkItem({ chunk, canEdit, onSaved }) {
           <textarea
             className="chunk-textarea"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={handleTextChange}
             rows={5}
             autoFocus
           />
+          <div className="chunk-char-count" style={{ color: text.length >= MAX_CHARS ? '#f87171' : '#555' }}>
+            {text.length}/{MAX_CHARS}
+          </div>
           {error && <p className="chunk-edit-error">{error}</p>}
           <div className="chunk-edit-actions">
-            <button className="chunk-save-btn" onClick={handleSave} disabled={saving}>
+            <button className="chunk-save-btn" onClick={handleSave} disabled={saving || !text.trim()}>
               {saving ? "Zapisywanie…" : "Zapisz"}
             </button>
             <button className="chunk-cancel-btn" onClick={handleCancel} disabled={saving}>
@@ -90,7 +119,6 @@ export default function ChunkPreview({ documentId, initialDoc, canEdit }) {
   const [error, setError]     = useState(null);
   const pollRef               = useRef(null);
 
-  // Poll embedding status while processing
   useEffect(() => {
     if (!doc) return;
     const active = doc.embedding_status === 'chunking' || doc.embedding_status === 'embedding';
@@ -127,6 +155,10 @@ export default function ChunkPreview({ documentId, initialDoc, canEdit }) {
     setChunks((prev) => prev.map((c) => c.id === updated.id ? updated : c));
   };
 
+  const handleChunkDeleted = (id) => {
+    setChunks((prev) => prev.filter((c) => c.id !== id));
+  };
+
   if (!doc || doc.status !== 'ready') return null;
 
   return (
@@ -135,18 +167,12 @@ export default function ChunkPreview({ documentId, initialDoc, canEdit }) {
         <div className="chunk-meta">
           <EmbeddingBadge status={doc.embedding_status} />
           {doc.embedding_status === 'done' && (
-            <span className="chunk-count">{doc.chunk_count} chunków</span>
+            <span className="chunk-count">{chunks.length > 0 ? chunks.length : doc.chunk_count} chunków</span>
           )}
-          {doc.embedding_error && (
-            <span className="chunk-error">{doc.embedding_error}</span>
-          )}
+          {doc.embedding_error && <span className="chunk-error">{doc.embedding_error}</span>}
         </div>
-
         {doc.embedding_status === 'done' && doc.chunk_count > 0 && (
-          <button
-            className="chunks-toggle"
-            onClick={() => open ? setOpen(false) : loadChunks()}
-          >
+          <button className="chunks-toggle" onClick={() => open ? setOpen(false) : loadChunks()}>
             {loading ? "Ładowanie…" : open ? "Ukryj chunki ▲" : "Podgląd chunków ▼"}
           </button>
         )}
@@ -162,6 +188,7 @@ export default function ChunkPreview({ documentId, initialDoc, canEdit }) {
               chunk={chunk}
               canEdit={canEdit}
               onSaved={handleChunkSaved}
+              onDeleted={handleChunkDeleted}
             />
           ))}
         </div>

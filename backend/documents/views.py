@@ -114,6 +114,31 @@ class ChunkUpdateView(APIView):
     authentication_classes = [CookieJWTAuthentication]
     permission_classes     = [IsAuthenticated]
 
+    def delete(self, request, pk):
+        chunk = get_object_or_404(Chunk, pk=pk)
+        role = _get_project_role(chunk.document.project, request.user)
+
+        if role not in ('owner', 'admin', 'editor'):
+            raise PermissionDenied("Nie masz uprawnień do usuwania chunków.")
+
+        try:
+            from documents.embeddings import (
+                get_chroma_client,
+                get_or_create_collection,
+            )
+
+            client = get_chroma_client()
+            collection = get_or_create_collection(client)
+
+            collection.delete(ids=[str(chunk.pk)])
+
+        except Exception:
+            pass
+
+        chunk.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     def patch(self, request, pk):
         chunk = get_object_or_404(Chunk, pk=pk)
         role  = _get_project_role(chunk.document.project, request.user)
@@ -138,7 +163,7 @@ class ChunkUpdateView(APIView):
             embeddings = embed_texts([new_text])
             client     = get_chroma_client()
             collection = get_or_create_collection(client)
-            collection.update(
+            collection.upsert(
                 ids        = [str(chunk.pk)],
                 documents  = [new_text],
                 embeddings = embeddings,

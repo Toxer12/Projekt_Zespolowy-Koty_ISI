@@ -61,6 +61,7 @@ class ProjectMember(models.Model):
 
 
 class ProjectInvite(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     class Status(models.TextChoices):
         PENDING   = 'pending',   'Oczekuje'
         ACCEPTED  = 'accepted',  'Zaakceptowane'
