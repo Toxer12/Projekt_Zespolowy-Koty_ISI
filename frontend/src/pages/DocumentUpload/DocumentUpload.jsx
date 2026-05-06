@@ -37,7 +37,7 @@ function StatusBadge({ status }) {
 }
 
 // ── Single document row ───────────────────────
-function DocumentRow({ doc, onDelete, onStatusUpdate, projectId }) {
+function DocumentRow({ doc, onDelete, onStatusUpdate, projectId, canEdit }) {
   const pollRef = useRef(null);
 
   useEffect(() => {
@@ -94,7 +94,7 @@ function DocumentRow({ doc, onDelete, onStatusUpdate, projectId }) {
 }
 
 // ── Main component ────────────────────────────
-export default function DocumentUpload({ projectId }) {
+export default function DocumentUpload({ projectId, canEdit }) {
   const [docs, setDocs]         = useState([]);
   const [loading, setLoading]   = useState(true);
   const [dragging, setDragging] = useState(false);
@@ -223,6 +223,7 @@ export default function DocumentUpload({ projectId }) {
               onDelete={handleDelete}
               onStatusUpdate={handleStatusUpdate}
               projectId={projectId}
+              canEdit = {canEdit}
             />
           ))}
         </div>

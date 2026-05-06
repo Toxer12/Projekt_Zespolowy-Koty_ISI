@@ -286,7 +286,7 @@ function ProjectDetail() {
 
       {!editing && (
         <div className="detail-card">
-          {canUpload && <DocumentUpload projectId={id} />}
+          {canUpload && <DocumentUpload projectId={id} canEdit={canUpload} />}
           {!canUpload && (
             <div className="doc-section">
               <h2 className="doc-section-title">Dokumenty</h2>
