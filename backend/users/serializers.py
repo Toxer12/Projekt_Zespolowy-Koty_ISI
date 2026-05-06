@@ -9,7 +9,7 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('email', 'password', 'username')
+        fields = ('email', 'password', 'name')  # was 'username'
         extra_kwargs = {
             'password': {'write_only': True},
             'email': {'write_only': True},
@@ -51,26 +51,15 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 class AuthTokenSerializer(serializers.Serializer):
     email = serializers.CharField()
-    password = serializers.CharField(
-        style={'input_type': 'password'},
-        trim_whitespace=False
-    )
+    password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
         email = attrs.get('email')
         password = attrs.get('password')
 
-        user = authenticate(
-            request=self.context.get('request'),
-            username=email,
-            password=password
-        )
+        user = User.objects.filter(email=email).first()
+        if user and user.check_password(password):
+            attrs['user'] = user
+            return attrs
 
-        if not user:
-            raise serializers.ValidationError(
-                _('Unable to authenticate with provided credentials'),
-                code='authentication'
-            )
-
-        attrs['user'] = user
-        return attrs
+        raise serializers.ValidationError("Invalid credentials")

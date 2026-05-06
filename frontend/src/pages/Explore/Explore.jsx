@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { appApi } from "../../api";
 import "../Projects/Projects.css";
 
@@ -6,13 +7,13 @@ function TagBadge({ name }) {
   return <span className="tag-badge">{name}</span>;
 }
 
-function PublicProjectCard({ project }) {
+function PublicProjectCard({ project, onClick }) {
   const date = new Date(project.created_at).toLocaleDateString("pl-PL", {
     day: "2-digit", month: "short", year: "numeric",
   });
 
   return (
-    <article className="project-card">
+    <article className="project-card" onClick={onClick}>
       <div className="project-card-top">
         <span className="project-owner-label">@{project.owner}</span>
         <span className="project-date">{date}</span>
@@ -25,12 +26,14 @@ function PublicProjectCard({ project }) {
       </div>
       <div className="project-card-footer">
         <span className="visibility-label public">Publiczny</span>
+        <span className="card-arrow">→</span>
       </div>
     </article>
   );
 }
 
 function Explore() {
+  const navigate              = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState(null);
@@ -63,7 +66,11 @@ function Explore() {
       {!loading && !error && projects.length > 0 && (
         <div className="projects-grid">
           {projects.map((p) => (
-            <PublicProjectCard key={p.id} project={p} />
+            <PublicProjectCard
+              key={p.id}
+              project={p}
+              onClick={() => navigate(`/projects/${p.id}`)}
+            />
           ))}
         </div>
       )}

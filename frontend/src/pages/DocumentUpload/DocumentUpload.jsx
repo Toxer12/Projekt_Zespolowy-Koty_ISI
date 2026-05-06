@@ -76,7 +76,7 @@ function DocumentRow({ doc, onDelete, onStatusUpdate, projectId }) {
         {doc.status === "error" && doc.error_message && (
           <span className="doc-error">{doc.error_message}</span>
         )}
-        <ChunkPreview documentId={doc.id} initialDoc={doc} />
+        <ChunkPreview documentId={doc.id} initialDoc={doc} canEdit={canEdit} />
       </div>
       <StatusBadge status={doc.status} />
       {doc.status === "ready" && doc.file_url && (

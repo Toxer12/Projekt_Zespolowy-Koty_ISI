@@ -59,19 +59,25 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         user = self.request.user
+        # Include: owned, member, or public projects
         return Project.objects.filter(
-            Q(owner=user) | Q(members__user=user)
+            Q(owner=user) | Q(members__user=user) | Q(visibility='public')
         ).prefetch_related('tags', 'members').distinct()
 
     def get_object(self):
-        obj = super().get_object()
+        obj  = super().get_object()
         role = get_project_role(obj, self.request.user)
-        if role is None:
-            raise PermissionDenied()
-        # Only owner can edit/delete the project itself
+
+        # Mutating methods require ownership
         if self.request.method in ('PUT', 'PATCH', 'DELETE'):
             if obj.owner != self.request.user:
                 raise PermissionDenied("Tylko właściciel może edytować lub usuwać projekt.")
+
+        # Read: allow any member or any user for public projects
+        if self.request.method == 'GET':
+            if role is None and obj.visibility != 'public':
+                raise PermissionDenied()
+
         return obj
 
 
@@ -116,14 +122,14 @@ class ProjectMemberListView(APIView):
     def get(self, request, project_id):
         project = get_object_or_404(Project, pk=project_id)
         role    = get_project_role(project, request.user)
-        if role is None:
+        if role is None and project.visibility != 'public':
             raise PermissionDenied()
 
         members = project.members.select_related('user', 'added_by').all()
         owner_entry = {
             'id':         None,
             'user_id':    project.owner.id,
-            'user_name':  project.owner.username,
+            'user_name':  project.owner.name,
             'user_email': project.owner.email,
             'role':       'owner',
             'added_at':   None,
@@ -149,13 +155,12 @@ class ProjectInviteCreateView(APIView):
         if not username:
             return Response({'error': 'Podaj nazwę użytkownika.'}, status=400)
 
-        # Admins can only invite editor/viewer
         valid_roles = ['editor', 'viewer'] if actor_role == 'admin' else ['admin', 'editor', 'viewer']
         if role not in valid_roles:
             return Response({'error': f"Nieprawidłowa rola. Dostępne: {', '.join(valid_roles)}."}, status=400)
 
         try:
-            invitee = User.objects.get(username=username)
+            invitee = User.objects.get(name=username)
         except User.DoesNotExist:
             return Response({'error': 'Użytkownik nie istnieje.'}, status=404)
 
@@ -178,7 +183,6 @@ class ProjectInviteCreateView(APIView):
 
 
 class ProjectMemberUpdateView(APIView):
-    """PATCH to change role, DELETE to remove a member."""
     authentication_classes = [CookieJWTAuthentication]
     permission_classes     = [IsAuthenticated]
 
@@ -213,7 +217,6 @@ class ProjectMemberUpdateView(APIView):
 
 
 class LeaveProjectView(APIView):
-    """Allows a member (non-owner) to leave a project."""
     authentication_classes = [CookieJWTAuthentication]
     permission_classes     = [IsAuthenticated]
 

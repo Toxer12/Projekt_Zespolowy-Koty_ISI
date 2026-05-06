@@ -82,25 +82,25 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 class ProjectMemberSerializer(serializers.ModelSerializer):
     user_id    = serializers.IntegerField(source='user.id', read_only=True)
-    user_name  = serializers.CharField(source='user.username', read_only=True)
+    user_name  = serializers.CharField(source='user.name', read_only=True)
     user_email = serializers.CharField(source='user.email', read_only=True)
 
     class Meta:
-        model  = ProjectMember
-        fields = ('id', 'user_id', 'user_name', 'user_email', 'role', 'added_at')
-        read_only_fields = fields
+        model        = ProjectMember
+        fields       = ('id', 'user_id', 'user_name', 'user_email', 'role', 'added_at')
+        read_only_fields = ('id', 'user_id', 'user_name', 'user_email', 'added_at')
 
 
 class ProjectInviteSerializer(serializers.ModelSerializer):
-    project_id      = serializers.IntegerField(source='project.id', read_only=True)
+    project_id      = serializers.UUIDField(source='project.id', read_only=True)
     project_name    = serializers.CharField(source='project.name', read_only=True)
-    invited_by_name = serializers.CharField(source='invited_by.username', read_only=True)
+    invited_by_name = serializers.CharField(source='invited_by.name', read_only=True)
     invitee_id      = serializers.IntegerField(source='invitee.id', read_only=True)
-    invitee_name    = serializers.CharField(source='invitee.username', read_only=True)
+    invitee_name    = serializers.CharField(source='invitee.name', read_only=True)
 
     class Meta:
-        model  = ProjectInvite
-        fields = (
+        model        = ProjectInvite
+        fields       = (
             'id', 'project_id', 'project_name',
             'invited_by_name', 'invitee_id', 'invitee_name',
             'role', 'status', 'created_at', 'responded_at',
