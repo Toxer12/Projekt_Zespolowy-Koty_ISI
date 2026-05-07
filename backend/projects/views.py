@@ -10,7 +10,7 @@ from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 
 from users.auth import CookieJWTAuthentication
-from projects.models import Project, Tag, ProjectMember, ProjectInvite, ROLE_RANK
+from projects.models import Project, Tag, ProjectMember, ProjectInvite, ProjectFavorite, ROLE_RANK
 from projects.serializers import (
     ProjectSerializer, TagSerializer,
     ProjectMemberSerializer, ProjectInviteSerializer,
@@ -28,10 +28,12 @@ def get_project_role(project, user):
     except ProjectMember.DoesNotExist:
         return None
 
+
 class PublicProjectPagination(PageNumberPagination):
-    page_size              = 9
-    page_size_query_param  = 'page_size'
-    max_page_size          = 50
+    page_size             = 9
+    page_size_query_param = 'page_size'
+    max_page_size         = 50
+
 
 # ── Projects ──────────────────────────────────────────────────────────────
 
@@ -44,7 +46,7 @@ class ProjectListCreateView(generics.ListCreateAPIView):
     ordering_fields        = ['created_at', 'name']
 
     def get_queryset(self):
-        qs = Project.objects.filter(owner=self.request.user).prefetch_related('tags', 'members')
+        qs = Project.objects.filter(owner=self.request.user).prefetch_related('tags', 'members', 'favorited_by')
         visibility = self.request.query_params.get('visibility')
         if visibility in ('public', 'private'):
             qs = qs.filter(visibility=visibility)
@@ -64,21 +66,18 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        # Include: owned, member, or public projects
         return Project.objects.filter(
             Q(owner=user) | Q(members__user=user) | Q(visibility='public')
-        ).prefetch_related('tags', 'members').distinct()
+        ).prefetch_related('tags', 'members', 'favorited_by').distinct()
 
     def get_object(self):
         obj  = super().get_object()
         role = get_project_role(obj, self.request.user)
 
-        # Mutating methods require ownership
         if self.request.method in ('PUT', 'PATCH', 'DELETE'):
             if obj.owner != self.request.user:
                 raise PermissionDenied("Tylko właściciel może edytować lub usuwać projekt.")
 
-        # Read: allow any member or any user for public projects
         if self.request.method == 'GET':
             if role is None and obj.visibility != 'public':
                 raise PermissionDenied()
@@ -87,7 +86,6 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class MemberProjectListView(generics.ListAPIView):
-    """Projects the user is a member of (not owner)."""
     serializer_class       = ProjectSerializer
     authentication_classes = [CookieJWTAuthentication]
     permission_classes     = [IsAuthenticated]
@@ -95,21 +93,55 @@ class MemberProjectListView(generics.ListAPIView):
     def get_queryset(self):
         return Project.objects.filter(
             members__user=self.request.user
-        ).prefetch_related('tags', 'members').select_related('owner')
+        ).prefetch_related('tags', 'members', 'favorited_by').select_related('owner')
 
 
 class PublicProjectListView(generics.ListAPIView):
     serializer_class       = ProjectSerializer
     authentication_classes = [CookieJWTAuthentication]
     permission_classes     = [IsAuthenticated]
-    pagination_class = PublicProjectPagination
+    pagination_class       = PublicProjectPagination
     filter_backends        = [filters.OrderingFilter]
     ordering_fields        = ['created_at', 'name']
 
     def get_queryset(self):
         return Project.objects.filter(
             visibility='public'
-        ).prefetch_related('tags', 'members').select_related('owner')
+        ).prefetch_related('tags', 'members', 'favorited_by').select_related('owner')
+
+
+class FavoriteListView(generics.ListAPIView):
+    """All projects favorited by the current user."""
+    serializer_class       = ProjectSerializer
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Project.objects.filter(
+            favorited_by__user=self.request.user
+        ).prefetch_related('tags', 'members', 'favorited_by').select_related('owner')
+
+
+class FavoriteToggleView(APIView):
+    """POST to toggle favorite on a project. Returns { is_favorited: bool }."""
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+
+    def post(self, request, project_id):
+        project = get_object_or_404(Project, pk=project_id)
+        role    = get_project_role(project, request.user)
+
+        # Allow any member or any user for public projects
+        if role is None and project.visibility != 'public':
+            raise PermissionDenied()
+
+        favorite, created = ProjectFavorite.objects.get_or_create(
+            user=request.user, project=project,
+        )
+        if not created:
+            favorite.delete()
+            return Response({'is_favorited': False})
+        return Response({'is_favorited': True})
 
 
 class TagListView(generics.ListAPIView):
@@ -180,10 +212,7 @@ class ProjectInviteCreateView(APIView):
             return Response({'error': 'Użytkownik ma już oczekujące zaproszenie do tego projektu.'}, status=400)
 
         invite = ProjectInvite.objects.create(
-            project    = project,
-            invited_by = request.user,
-            invitee    = invitee,
-            role       = role,
+            project=project, invited_by=request.user, invitee=invitee, role=role,
         )
         return Response(ProjectInviteSerializer(invite).data, status=201)
 

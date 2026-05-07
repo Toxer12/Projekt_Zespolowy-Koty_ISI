@@ -200,6 +200,23 @@ function ProjectDetail() {
           <h1 className="page-title">{project.name}</h1>
         </div>
         <div className="header-actions">
+            <button
+  className={`favorite-btn ${project.is_favorited ? "active" : ""}`}
+  onClick={async () => {
+    try {
+      const res = await appApi.post(`/projects/${id}/favorite/`);
+
+      setProject((prev) => ({
+        ...prev,
+        is_favorited: res.data.is_favorited,
+      }));
+    } catch {
+      alert("Nie udało się zaktualizować ulubionych.");
+    }
+  }}
+>
+  {project.is_favorited ? "★ Ulubione" : "☆ Dodaj do ulubionych"}
+</button>
           {!editing && canEdit && (
             <><button className="ghost-btn" onClick={startEdit}>Edytuj</button><button className="danger-btn" onClick={() => setConfirmDelete(true)}>Usuń</button></>
           )}
