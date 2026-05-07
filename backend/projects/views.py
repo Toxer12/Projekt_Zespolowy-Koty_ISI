@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 
 from users.auth import CookieJWTAuthentication
@@ -27,6 +28,10 @@ def get_project_role(project, user):
     except ProjectMember.DoesNotExist:
         return None
 
+class PublicProjectPagination(PageNumberPagination):
+    page_size              = 9
+    page_size_query_param  = 'page_size'
+    max_page_size          = 50
 
 # ── Projects ──────────────────────────────────────────────────────────────
 
@@ -97,6 +102,7 @@ class PublicProjectListView(generics.ListAPIView):
     serializer_class       = ProjectSerializer
     authentication_classes = [CookieJWTAuthentication]
     permission_classes     = [IsAuthenticated]
+    pagination_class = PublicProjectPagination
     filter_backends        = [filters.OrderingFilter]
     ordering_fields        = ['created_at', 'name']
 
