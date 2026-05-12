@@ -74,3 +74,51 @@ class AuthTokenSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
+    
+
+from rest_framework import serializers
+
+class ChangeNameSerializer(serializers.Serializer):
+    new_name = serializers.CharField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, data):
+        user = self.context['request'].user
+
+        if not user.check_password(data['password']):
+            raise serializers.ValidationError({
+                "password": "Nieprawidłowe hasło."
+            })
+
+        return data
+
+    def update(self, instance, validated_data):
+        instance.username = validated_data['new_name']
+        instance.save()
+        return instance
+    
+class ChangeEmailSerializer(serializers.Serializer):
+    new_email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, data):
+        user = self.context['request'].user
+
+        # check password
+        if not user.check_password(data['password']):
+            raise serializers.ValidationError({
+                "password": "Nieprawidłowe hasło."
+            })
+
+        # check uniqueness
+        if User.objects.filter(email=data['new_email']).exists():
+            raise serializers.ValidationError({
+                "new_email": "Ten email jest już zajęty."
+            })
+
+        return data
+
+    def update(self, instance, validated_data):
+        instance.email = validated_data['new_email']
+        instance.save()
+        return instance
