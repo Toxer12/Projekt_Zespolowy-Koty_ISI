@@ -1,0 +1,8 @@
+Instalacja coverage:
+docker compose exec web pip install coverage
+
+Uruchomienie testów:
+docker compose exec web coverage run manage.py test users projects documents
+
+Wyświetlenie raportu:
+docker compose exec web coverage report
