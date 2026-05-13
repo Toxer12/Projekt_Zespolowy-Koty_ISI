@@ -22,6 +22,9 @@ import Search            from "./pages/Search/Search";
 
 import ProtectedRoute    from "./ProtectedRoute";
 
+import ChangeName from "./pages/ChangeName/ChangeName";
+import ChangeEmail from "./pages/ChangeEmail/ChangeEmail";
+
 const AuthContext = createContext();
 
 export function useAuth() {
@@ -81,6 +84,8 @@ function App() {
           <Route path="/invites"         element={protect(Invites)} />
           <Route path="/search"          element={protect(Search)} />
           <Route path="/profile"         element={protect(Profile)} />
+          <Route path="/profile/change-name" element={protect(ChangeName)} />
+          <Route path="/profile/change-email" element={protect(ChangeEmail)} />
           <Route path="/change-password" element={protect(ChangePassword)} />
 
           <Route path="*" element={<Navigate to="/login" />} />

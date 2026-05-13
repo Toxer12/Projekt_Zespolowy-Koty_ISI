@@ -17,7 +17,7 @@ from django.utils.encoding import force_bytes
 from django.core.mail import send_mail
 from django.urls import reverse
 
-from users.serializers import UserSerializer, AuthTokenSerializer, ChangePasswordSerializer
+from users.serializers import UserSerializer, AuthTokenSerializer, ChangePasswordSerializer, ChangeNameSerializer, ChangeEmailSerializer
 
 from users.auth import CookieJWTAuthentication
 
@@ -161,6 +161,44 @@ class ChangePasswordView(APIView):
         response.delete_cookie('refresh_token')
 
         return response
+
+
+class ChangeNameView(APIView):
+    authentication_classes = (CookieJWTAuthentication, SessionAuthentication)
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangeNameSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
+        serializer.is_valid(raise_exception=True)
+        serializer.update(request.user, serializer.validated_data)
+
+        return Response(
+            {"message": "Username changed successfully"},
+            status=status.HTTP_200_OK
+        )
+
+class ChangeEmailView(APIView):
+    authentication_classes = (CookieJWTAuthentication, SessionAuthentication)
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangeEmailSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
+        serializer.is_valid(raise_exception=True)
+        serializer.update(request.user, serializer.validated_data)
+
+        return Response(
+            {"message": "Email changed successfully"},
+            status=status.HTTP_200_OK
+        )
+
 
 class PasswordResetRequestView(APIView):
     authentication_classes = []

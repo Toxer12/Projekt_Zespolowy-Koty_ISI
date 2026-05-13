@@ -10,7 +10,7 @@ const DEFAULT_CONFIG = {
 
 const api = axios.create({
   ...DEFAULT_CONFIG,
-  baseURL: `${BASE}/users`,
+  baseURL: `${BASE}/users/`,
 });
 
 export const appApi = axios.create({
@@ -70,6 +70,20 @@ const createInterceptor = (instance, logout) => {
 export const setupInterceptors = (logout) => {
   createInterceptor(api,    logout);
   createInterceptor(appApi, logout);
+};
+
+export const changeName = async (new_name, password) => {
+    return api.post("change-name/", {
+        new_name,
+        password
+    });
+};
+
+export const changeEmail = async (new_email, password) => {
+    return api.post("change-email/", {
+        new_email,
+        password
+    });
 };
 
 export default api;
