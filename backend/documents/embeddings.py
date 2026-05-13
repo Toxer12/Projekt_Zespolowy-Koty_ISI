@@ -16,12 +16,10 @@ def get_model() -> SentenceTransformer:
     if _model is None:
         model_name = getattr(settings, 'EMBEDDING_MODEL', 'paraphrase-multilingual-MiniLM-L12-v2')
         logger.info(f"Ładowanie modelu embeddingów: {model_name}")
-        _model = SentenceTransformer(model_name)
+        _model = SentenceTransformer(model_name, device='cpu')
+        _model = _model.to('cpu')
         logger.info("Model załadowany.")
     return _model
-
-
-
 
 
 def get_chroma_client() -> chromadb.HttpClient:
@@ -32,6 +30,7 @@ def get_chroma_client() -> chromadb.HttpClient:
         port=port,
         settings=Settings(anonymized_telemetry=False),
     )
+
 
 def get_or_create_collection(client: chromadb.HttpClient, name: str = 'documents'):
     return client.get_or_create_collection(

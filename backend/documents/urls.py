@@ -5,6 +5,7 @@ from documents.views import (
     DocumentDetailView,
     DocumentChunkListView,
     ChunkUpdateView,
+    SemanticSearchView,
 )
 
 urlpatterns = [
@@ -13,4 +14,5 @@ urlpatterns = [
     path('<uuid:pk>/',              DocumentDetailView.as_view(),      name='document-detail'),
     path('<uuid:pk>/chunks/',       DocumentChunkListView.as_view(),   name='document-chunks'),
     path('chunks/<uuid:pk>/',       ChunkUpdateView.as_view(),         name='chunk-update'),
+    path('search/',                 SemanticSearchView.as_view(),      name='document-search'),
 ]
