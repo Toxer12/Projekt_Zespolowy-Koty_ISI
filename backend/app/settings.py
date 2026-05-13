@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     'projects',
     'documents',
+    'users',
 ]
 
 MIDDLEWARE = [
@@ -159,3 +160,5 @@ CHROMA_PORT = int(os.environ.get('CHROMA_PORT', 8000))
 
 # HuggingFace model
 EMBEDDING_MODEL = os.environ.get('EMBEDDING_MODEL', 'paraphrase-multilingual-MiniLM-L12-v2')
+
+AUTH_USER_MODEL = 'users.User'

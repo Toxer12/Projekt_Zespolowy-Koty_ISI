@@ -34,7 +34,7 @@ function Login() {
       <h1>Logowanie</h1>
       {activated && <p style={{ color: "green", fontSize: "0.85rem" }}>Konto aktywowane! Możesz się teraz zalogować.</p>}
       <form className="form" onSubmit={handleSubmit}>
-        <input className="input" name="email" placeholder="Nazwa użytkownika" value={form.email} onChange={handleChange} required />
+        <input className="input" name="email" placeholder="Adres e-mail" value={form.email} onChange={handleChange} required />
         <input className="input" name="password" type="password" placeholder="Hasło" value={form.password} onChange={handleChange} required />
         {error && <p style={{ color: "red", fontSize: "0.85rem" }}>{error}</p>}
         <button className="button" type="submit">Login</button>

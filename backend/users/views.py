@@ -289,5 +289,5 @@ class MyView(APIView):
 
     def get(self, request):
         return Response({'email': request.user.email,
-                         'username': request.user.username,})
+                         'username': request.user.name,})
 

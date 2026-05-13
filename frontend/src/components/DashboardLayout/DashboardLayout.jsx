@@ -42,6 +42,10 @@ function DashboardLayout({ children }) {
               <span className="nav-icon">◎</span>
               <span>Profil</span>
             </NavLink>
+            <NavLink to="/search" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
+              <span className="nav-icon">⌕</span>
+              <span>Wyszukiwanie</span>
+            </NavLink>
           </nav>
         </div>
         <div className="sidebar-bottom">
