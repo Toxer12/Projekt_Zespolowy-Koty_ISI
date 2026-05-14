@@ -1,42 +1,50 @@
 import axios from "axios";
-
+ 
 const BASE = "http://localhost:8000/api";
-
+ 
 const DEFAULT_CONFIG = {
   withCredentials: true,
   xsrfCookieName: "csrftoken",
   xsrfHeaderName: "X-CSRFToken",
 };
-
+ 
 const api = axios.create({
   ...DEFAULT_CONFIG,
   baseURL: `${BASE}/users/`,
 });
-
+ 
 export const appApi = axios.create({
   ...DEFAULT_CONFIG,
   baseURL: BASE,
 });
-
+ 
 let isRefreshing = false;
 let failedQueue  = [];
-
+ 
 const processQueue = (error) => {
   failedQueue.forEach((prom) => error ? prom.reject(error) : prom.resolve());
   failedQueue = [];
 };
-
+ 
+const PUBLIC_URLS = ["/login/", "/register/", "/refresh/", "/reset-password/", "/activate/"];
+ 
 const createInterceptor = (instance, logout) => {
   instance.interceptors.response.use(
     (response) => response,
     async (error) => {
       const original = error.config;
-
+      const url = original.url || "";
+ 
       if (original.url?.includes("/refresh/")) {
         logout();
         return Promise.reject(error);
       }
-
+ 
+      // Nie ponawiaj publicznych endpointów
+      if (PUBLIC_URLS.some((pub) => url.includes(pub))) {
+        return Promise.reject(error);
+      }
+ 
       if (error.response?.status === 401 && !original._retry) {
         if (isRefreshing) {
           return new Promise((resolve, reject) => {
@@ -45,10 +53,10 @@ const createInterceptor = (instance, logout) => {
             .then(() => instance(original))
             .catch((err) => Promise.reject(err));
         }
-
+ 
         original._retry  = true;
         isRefreshing     = true;
-
+ 
         try {
           await api.post("/refresh/");
           processQueue(null);
@@ -61,29 +69,29 @@ const createInterceptor = (instance, logout) => {
           isRefreshing = false;
         }
       }
-
+ 
       return Promise.reject(error);
     }
   );
 };
-
+ 
 export const setupInterceptors = (logout) => {
   createInterceptor(api,    logout);
   createInterceptor(appApi, logout);
 };
-
+ 
 export const changeName = async (new_name, password) => {
     return api.post("change-name/", {
         new_name,
         password
     });
 };
-
+ 
 export const changeEmail = async (new_email, password) => {
     return api.post("change-email/", {
         new_email,
         password
     });
 };
-
+ 
 export default api;

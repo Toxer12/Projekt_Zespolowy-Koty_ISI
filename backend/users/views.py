@@ -4,7 +4,7 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authentication import SessionAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
@@ -23,6 +23,8 @@ from users.auth import CookieJWTAuthentication
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = UserSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
     def perform_create(self, serializer):
         user = serializer.save()
@@ -43,6 +45,8 @@ class RegisterView(generics.CreateAPIView):
 from django.shortcuts import redirect
 
 class ActivateUserView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
     def get(self, request, uidb64, token):
         try:
             uid = urlsafe_base64_decode(uidb64).decode()
@@ -58,7 +62,7 @@ class ActivateUserView(APIView):
         return redirect("http://localhost:5173/login?activated=1")
 
 class LoginView(APIView):
-    authentication_classes = (SessionAuthentication,)
+    authentication_classes = []
     def post(self, request):
         serializer = AuthTokenSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
@@ -96,7 +100,7 @@ class LoginView(APIView):
         return response
 
 class RefreshView(APIView):
-    authentication_classes = (SessionAuthentication,)
+    authentication_classes = []
     def post(self, request):
         refresh_token = request.COOKIES.get('refresh_token')
         if not refresh_token:
@@ -125,7 +129,7 @@ class RefreshView(APIView):
         return response
 
 class LogoutView(APIView):
-    authentication_classes = (SessionAuthentication,)
+    authentication_classes = []
 
     def post(self, request):
         refresh_token = request.COOKIES.get('refresh_token')
