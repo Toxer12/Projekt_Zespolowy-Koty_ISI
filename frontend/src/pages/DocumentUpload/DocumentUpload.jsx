@@ -72,6 +72,7 @@ function DocumentRow({ doc, onDelete, onStatusUpdate, projectId, canEdit }) {
       <span className="doc-icon">{doc.file_type === "pdf" ? "📄" : "📝"}</span>
       <div className="doc-info">
         <span className="doc-name">{doc.original_name}</span>
+        <span className="doc-meta">{timeAgo(doc.uploaded_at)}</span>
         <span className="doc-meta">{formatSize(doc.file_size)}</span>
         {doc.status === "error" && doc.error_message && (
           <span className="doc-error">{doc.error_message}</span>
@@ -91,6 +92,22 @@ function DocumentRow({ doc, onDelete, onStatusUpdate, projectId, canEdit }) {
       <button className="doc-delete" onClick={handleDelete} title="Usuń">×</button>
     </div>
   );
+}
+
+function timeAgo(isoDate) {
+  const seconds = Math.floor((Date.now() - new Date(isoDate)) / 1000);
+  if (seconds < 60)  return "przed chwilą";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60)  return `${minutes} min temu`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24)    return `${hours} godz. temu`;
+  const days = Math.floor(hours / 24);
+  if (days < 7)      return `${days} dni temu`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 4)     return `${weeks} tyg. temu`;
+  const months = Math.floor(days / 30);
+  if (months < 12)   return `${months} mies. temu`;
+  return `${Math.floor(days / 365)} lat temu`;
 }
 
 // ── Main component ────────────────────────────
