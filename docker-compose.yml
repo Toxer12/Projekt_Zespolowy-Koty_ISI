@@ -5,17 +5,15 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_DB: mydb
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - backend
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U myuser -d mydb"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -23,8 +21,6 @@ services:
   redis:
     image: redis:7-alpine
     restart: always
-    ports:
-      - "6379:6379"
     networks:
       - backend
     healthcheck:
@@ -36,23 +32,18 @@ services:
   chromadb:
     image: chromadb/chroma:0.4.24
     restart: always
-    ports:
-      - "8001:8000"
     volumes:
       - chroma_data:/chroma/chroma
     networks:
       - backend
-    # Bez healthchecka — ChromaDB startuje wolno, restart: always wystarczy
 
   web:
     build: ./backend
     working_dir: /code
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn app.wsgi:application --bind 0.0.0.0:8000 --workers 2"
     volumes:
-      - ./backend:/code
       - media_data:/code/media
-    ports:
-      - "8000:8000"
+      - static_data:/code/staticfiles
     depends_on:
       db:
         condition: service_healthy
@@ -60,17 +51,7 @@ services:
         condition: service_healthy
       chromadb:
         condition: service_started
-    environment:
-      DB_NAME: mydb
-      DB_USER: myuser
-      DB_PASSWORD: mypassword
-      DB_HOST: db
-      DB_PORT: 5432
-      DJANGO_SECRET_KEY: "supersecretkey"
-      CELERY_BROKER_URL: "redis://redis:6379/0"
-      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
-      CHROMA_HOST: "chromadb"
-      CHROMA_PORT: "8000"
+    env_file: .env
     networks:
       - backend
 
@@ -79,7 +60,6 @@ services:
     working_dir: /code
     command: celery -A app worker --loglevel=info
     volumes:
-      - ./backend:/code
       - media_data:/code/media
       - hf_cache:/root/.cache/huggingface
     depends_on:
@@ -89,18 +69,7 @@ services:
         condition: service_healthy
       chromadb:
         condition: service_started
-    environment:
-      DB_NAME: mydb
-      DB_USER: myuser
-      DB_PASSWORD: mypassword
-      DB_HOST: db
-      DB_PORT: 5432
-      DJANGO_SECRET_KEY: "supersecretkey"
-      CELERY_BROKER_URL: "redis://redis:6379/0"
-      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
-      CHROMA_HOST: "chromadb"
-      CHROMA_PORT: "8000"
-      EMBEDDING_MODEL: "paraphrase-multilingual-MiniLM-L12-v2"
+    env_file: .env
     networks:
       - backend
 
@@ -114,15 +83,20 @@ services:
 
   frontend:
     build: ./frontend
-    environment:
-      - VITE_API_URL=http://localhost:8000/api/users/
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
     depends_on:
       - web
+    networks:
+      - backend
+
+  caddy:
+    image: caddy:alpine
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    depends_on:
+      - web
+      - frontend
     networks:
       - backend
 
@@ -131,6 +105,7 @@ volumes:
   media_data:
   chroma_data:
   hf_cache:
+  static_data:
 
 networks:
   backend:

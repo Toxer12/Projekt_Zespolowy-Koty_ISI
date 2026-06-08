@@ -21,12 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-(llc@%&dhrbv1jndb_^j+$qepl#2luzez0cq(me-j7no2uui8q'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -128,14 +128,14 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'AUTH_COOKIE': 'access_token',
     'AUTH_COOKIE_HTTP_ONLY': True,
-    'AUTH_COOKIE_SECURE': False,  # True in production (HTTPS)
+    'AUTH_COOKIE_SECURE': os.environ.get('AUTH_COOKIE_SECURE', 'False') == 'True',  # True in production (HTTPS)
     'AUTH_COOKIE_SAMESITE': 'Lax',
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
 }
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ORIGINS', '').split(',')
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_ORIGINS', '').split(',')
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'mailhog'
 EMAIL_PORT = 1025
@@ -162,3 +162,4 @@ CHROMA_PORT = int(os.environ.get('CHROMA_PORT', 8000))
 EMBEDDING_MODEL = os.environ.get('EMBEDDING_MODEL', 'paraphrase-multilingual-MiniLM-L12-v2')
 
 AUTH_USER_MODEL = 'users.User'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
