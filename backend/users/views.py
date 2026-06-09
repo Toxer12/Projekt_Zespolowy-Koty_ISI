@@ -16,6 +16,7 @@ from django.core.exceptions import ValidationError
 from django.utils.encoding import force_bytes
 from django.core.mail import send_mail
 from django.urls import reverse
+from django.conf import settings
 
 from users.serializers import UserSerializer, AuthTokenSerializer, ChangePasswordSerializer, ChangeNameSerializer, ChangeEmailSerializer
 
@@ -31,7 +32,7 @@ class RegisterView(generics.CreateAPIView):
 
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-        activation_link = f"http://localhost:8000/api/users/activate/{uid}/{token}/"
+        activation_link = f"{settings.BACKEND_URL}/api/users/activate/{uid}/{token}/"
         try:
             send_mail(
                 subject="Activate your account",
@@ -52,14 +53,14 @@ class ActivateUserView(APIView):
             uid = urlsafe_base64_decode(uidb64).decode()
             user = get_user_model().objects.get(pk=uid)
         except Exception:
-            return redirect("http://localhost:5173/activation-error")
+            return redirect(f"{settings.FRONTEND_URL}/activation-error")
         if user.is_active:
-            return redirect("http://localhost:5173/already-activated")
+            return redirect(f"{settings.FRONTEND_URL}/already-activated")
         if not default_token_generator.check_token(user, token):
-            return redirect("http://localhost:5173/activation-error")
+            return redirect(f"{settings.FRONTEND_URL}/activation-error")
         user.is_active = True
         user.save()
-        return redirect("http://localhost:5173/login?activated=1")
+        return redirect(f"{settings.FRONTEND_URL}/login?activated=1")
 
 class LoginView(APIView):
     authentication_classes = []
@@ -217,7 +218,7 @@ class PasswordResetRequestView(APIView):
 
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-        link = f"http://localhost:5173/reset-password/{uid}/{token}/"
+        link = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
 
         try:
             send_mail(

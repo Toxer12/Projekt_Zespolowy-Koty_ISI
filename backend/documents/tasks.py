@@ -1,5 +1,6 @@
 from celery import shared_task
 from django.utils import timezone
+from django.core.cache import cache
 import logging
 
 logger = logging.getLogger(__name__)
@@ -87,6 +88,7 @@ def process_document(self, document_id: str):
             doc.save(update_fields=['status', 'error_message', 'processed_at'])
 
 
+# ── Task 2: Chunkowanie i generowanie embeddingów ─────────────────────────
 @shared_task(bind=True, max_retries=2, default_retry_delay=10)
 def chunk_and_embed_document(self, document_id: str):
     from documents.models import Document, Chunk
@@ -173,3 +175,93 @@ def chunk_and_embed_document(self, document_id: str):
             doc.embedding_status = Document.EmbeddingStatus.ERROR
             doc.embedding_error  = f"Błąd generowania embeddingów: {str(exc)}"
             doc.save(update_fields=['embedding_status', 'embedding_error'])
+
+
+# ── Task 3: Asynchroniczne Wyszukiwanie Semantyczne (Nowość) ────────────────
+@shared_task(name="documents.tasks.run_semantic_search")
+def run_semantic_search_task(task_id: str, user_id: int, query: str, scope: str, n_results: int):
+    from projects.models import Project
+    from documents.embeddings import embed_texts, get_chroma_client, get_or_create_collection
+
+    try:
+        # 1. Wybór odpowiednich id projektów bazując na uprawnieniach scope
+        if scope == 'mine':
+            project_ids = [str(pk) for pk in Project.objects.filter(owner_id=user_id).values_list('pk', flat=True)]
+        else:  # public
+            project_ids = [str(pk) for pk in Project.objects.filter(visibility='public').values_list('pk', flat=True)]
+
+        if not project_ids:
+            cache.set(f"search_res_{task_id}", {"results": [], "query": query, "total": 0, "status": "SUCCESS"}, timeout=300)
+            return
+
+        # 2. Generowanie wektora zapytania (Ciężka operacja ML)
+        query_embedding = embed_texts([query])[0]
+        client = get_chroma_client()
+        collection = get_or_create_collection(client)
+
+        count = collection.count()
+        if count == 0:
+            cache.set(f"search_res_{task_id}", {"results": [], "query": query, "total": 0, "status": "SUCCESS"}, timeout=300)
+            return
+
+        # 3. Odpytanie bazy wektorowej ChromaDB
+        where = {"project_id": {"$in": project_ids}}
+        raw = collection.query(
+            query_embeddings=[query_embedding],
+            n_results=min(n_results, count),
+            where=where,
+            include=['documents', 'metadatas', 'distances'],
+        )
+
+        # 4. Formatowanie wyników oraz obliczanie podobieństwa cosinusowego
+        items = []
+        if raw and raw.get('documents') and len(raw['documents']) > 0:
+            for text, meta, dist in zip(raw['documents'][0], raw['metadatas'][0], raw['distances'][0]):
+                score = round((2 - dist) / 2, 4)
+                items.append({
+                    'text': text,
+                    'score': score,
+                    'file_name': meta.get('file_name', ''),
+                    'document_id': meta.get('document_id', ''),
+                    'chunk_index': meta.get('chunk_index', 0),
+                    'project_id': meta.get('project_id', ''),
+                })
+            items.sort(key=lambda x: x['score'], reverse=True)
+
+        # 5. Zapisanie gotowych danych do cache Redis na okres 5 minut
+        cache.set(
+            f"search_res_{task_id}", 
+            {"results": items, "query": query, "total": len(items), "status": "SUCCESS"}, 
+            timeout=300
+        )
+
+    except Exception as e:
+        logger.exception(f"Błąd podczas asynchronicznego wyszukiwania {task_id}: {str(e)}")
+        cache.set(f"search_res_{task_id}", {"error": f"Błąd wyszukiwania: {str(e)}", "status": "FAILURE"}, timeout=300)
+
+
+@shared_task
+def reembed_chunk_task(chunk_id: str):
+    from documents.models import Chunk
+    from documents.embeddings import embed_texts, get_chroma_client, get_or_create_collection
+
+    try:
+        chunk = Chunk.objects.get(pk=chunk_id)
+        doc = chunk.document
+        embeddings = embed_texts([chunk.text])
+        client = get_chroma_client()
+        collection = get_or_create_collection(client)
+        collection.upsert(
+            ids=[str(chunk.pk)],
+            documents=[chunk.text],
+            embeddings=embeddings,
+            metadatas=[{
+                'document_id': str(doc.pk),
+                'project_id': str(doc.project_id),
+                'chunk_index': chunk.index,
+                'chunk_type': chunk.chunk_type,
+                'file_name': doc.original_name,
+            }],
+        )
+    except Exception:
+        pass

@@ -1,16 +1,18 @@
+import uuid
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
+from django.core.cache import cache
 
 from users.auth import CookieJWTAuthentication
 from projects.models import Project, ProjectMember
 from documents.models import Document, Chunk
 from documents.serializers import DocumentUploadSerializer, DocumentSerializer, ChunkSerializer
-from documents.tasks import process_document
-
+from documents.tasks import process_document, run_semantic_search_task
+from documents.tasks import reembed_chunk_task
 
 def _get_project_role(project, user):
     """Returns 'owner', 'admin', 'editor', 'viewer', or None."""
@@ -57,8 +59,6 @@ class ProjectDocumentListView(generics.ListAPIView):
             return Document.objects.none()
         project = get_object_or_404(Project, pk=project_id)
         role = _get_project_role(project, self.request.user)
-        # All roles (including viewer) can list documents
-        # Public project visitors can also list documents
         if role is None and project.visibility != 'public':
             raise PermissionDenied("Nie masz dostępu do tego projektu.")
         return Document.objects.filter(project=project).prefetch_related('chunks')
@@ -122,21 +122,14 @@ class ChunkUpdateView(APIView):
             raise PermissionDenied("Nie masz uprawnień do usuwania chunków.")
 
         try:
-            from documents.embeddings import (
-                get_chroma_client,
-                get_or_create_collection,
-            )
-
+            from documents.embeddings import get_chroma_client, get_or_create_collection
             client = get_chroma_client()
             collection = get_or_create_collection(client)
-
             collection.delete(ids=[str(chunk.pk)])
-
         except Exception:
             pass
 
         chunk.delete()
-
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def patch(self, request, pk):
@@ -154,33 +147,15 @@ class ChunkUpdateView(APIView):
         chunk.char_count = len(new_text)
         chunk.save(update_fields=['text', 'char_count'])
 
-        # Re-embed this single chunk in Chroma inline
         try:
-            from documents.embeddings import (
-                embed_texts, get_chroma_client, get_or_create_collection,
-            )
-            doc        = chunk.document
-            embeddings = embed_texts([new_text])
-            client     = get_chroma_client()
-            collection = get_or_create_collection(client)
-            collection.upsert(
-                ids        = [str(chunk.pk)],
-                documents  = [new_text],
-                embeddings = embeddings,
-                metadatas  = [{
-                    'document_id': str(doc.pk),
-                    'project_id':  str(doc.project_id),
-                    'chunk_index': chunk.index,
-                    'chunk_type':  chunk.chunk_type,
-                    'file_name':   doc.original_name,
-                }],
-            )
+            reembed_chunk_task.delay(str(chunk.pk))
         except Exception:
-            pass  # text is saved — embedding failure is non-fatal
+            pass
 
         return Response(ChunkSerializer(chunk).data)
 
 
+# ── Zmienione Wyszukiwanie Semantyczne (Wydzielone do Celery) ─────────────────
 class SemanticSearchView(APIView):
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -192,77 +167,34 @@ class SemanticSearchView(APIView):
 
         if not query:
             return Response({'error': 'Pole query jest wymagane.'}, status=400)
+        if scope not in ['mine', 'public']:
+            return Response({'error': 'Nieprawidłowy scope.'}, status=400)
 
-        try:
-            if scope == 'mine':
-                results = self._search_my_projects(request.user, query, n_results)
-            elif scope == 'public':
-                results = self._search_public(query, n_results)
-            else:
-                return Response({'error': 'Nieprawidłowy scope.'}, status=400)
-        except Exception as e:
-            return Response({'error': f'Błąd wyszukiwania: {str(e)}'}, status=500)
+        # Generowanie losowego identyfikatora zadania
+        task_id = str(uuid.uuid4())
+        
+        # Ustawienie stanu początkowego w pamięci podręcznej Redis
+        cache.set(f"search_res_{task_id}", {"status": "PENDING"}, timeout=300)
 
-        return Response({'results': results, 'query': query, 'total': len(results)})
+        # Natychmiastowe przekazanie wykonania do puli procesów Celery
+        run_semantic_search_task.delay(task_id, request.user.id, query, scope, n_results)
 
-    def _get_project_ids(self, queryset):
-        return [str(pk) for pk in queryset.values_list('pk', flat=True)]
+        # Zwrócenie tokenu śledzącego do aplikacji klienckiej (Frontend React)
+        return Response({'task_id': task_id, 'status': 'PENDING'}, status=status.HTTP_202_ACCEPTED)
 
-    def _search_my_projects(self, user, query, n_results):
-        """9.1 — szuka we wszystkich projektach zalogowanego użytkownika."""
-        project_ids = self._get_project_ids(Project.objects.filter(owner=user))
-        if not project_ids:
-            return []
-        return self._run_search(query, project_ids, n_results)
 
-    def _search_public(self, query, n_results):
-        """9.2 — szuka w dokumentach wszystkich publicznych projektów."""
-        project_ids = self._get_project_ids(Project.objects.filter(visibility='public'))
-        if not project_ids:
-            return []
-        return self._run_search(query, project_ids, n_results)
+# ── Nowy Endpoint do Sprawdzania Stanu Przetwarzania Wyszukiwania ─────────────
+class SemanticSearchStatusView(APIView):
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
-    def _run_search(self, query, project_ids, n_results):
-        from documents.embeddings import embed_texts, get_chroma_client, get_or_create_collection
-
-        query_embedding = embed_texts([query])[0]
-        client = get_chroma_client()
-        collection = get_or_create_collection(client)
-
-        count = collection.count()
-        if count == 0:
-            return []
-
-        where = {"project_id": {"$in": project_ids}}
-        try:
-            results = collection.query(
-                query_embeddings=[query_embedding],
-                n_results=min(n_results, count),
-                where=where,
-                include=['documents', 'metadatas', 'distances'],
-            )
-        except Exception:
-            return []
-
-        return self._format_results(results)
-
-    def _format_results(self, raw):
-        """9.3 — ranking po score podobieństwa."""
-        items = []
-        for text, meta, dist in zip(
-                raw['documents'][0],
-                raw['metadatas'][0],
-                raw['distances'][0],
-        ):
-            score = round((2 - dist) / 2, 4)
-            items.append({
-                'text': text,
-                'score': score,
-                'file_name': meta.get('file_name', ''),
-                'document_id': meta.get('document_id', ''),
-                'chunk_index': meta.get('chunk_index', 0),
-                'project_id': meta.get('project_id', ''),
-            })
-
-        items.sort(key=lambda x: x['score'], reverse=True)
-        return items
+    def get(self, request, task_id):
+        task_data = cache.get(f"search_res_{task_id}")
+        
+        if not task_data:
+            return Response({'status': 'NOT_FOUND', 'error': 'Zadanie wygasło lub nie istnieje.'}, status=status.HTTP_404_NOT_FOUND)
+            
+        if task_data.get("status") == "FAILURE":
+            return Response(task_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        return Response(task_data, status=status.HTTP_200_OK)

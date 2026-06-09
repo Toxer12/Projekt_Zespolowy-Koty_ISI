@@ -40,7 +40,7 @@ services:
   web:
     build: ./backend
     working_dir: /code
-    command: sh -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn app.wsgi:application --bind 0.0.0.0:8000 --workers 2"
+    command: sh -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn app.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120"
     volumes:
       - media_data:/code/media
       - static_data:/code/staticfiles
@@ -59,7 +59,7 @@ services:
     build: ./backend
     working_dir: /code
     command: celery -A app worker --loglevel=info
-    volumes:
+    volumes: 
       - media_data:/code/media
       - hf_cache:/root/.cache/huggingface
     depends_on:
