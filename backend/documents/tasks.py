@@ -265,3 +265,25 @@ def reembed_chunk_task(chunk_id: str):
         )
     except Exception:
         pass
+
+@shared_task
+def delete_chunk_from_chroma_task(chunk_id: str):
+    from documents.embeddings import get_chroma_client, get_or_create_collection
+    try:
+        client = get_chroma_client()
+        collection = get_or_create_collection(client)
+        collection.delete(ids=[chunk_id])
+    except Exception:
+        pass
+
+@shared_task
+def delete_document_from_chroma_task(document_id: str):
+    from documents.embeddings import get_chroma_client, get_or_create_collection
+    try:
+        client = get_chroma_client()
+        collection = get_or_create_collection(client)
+        existing = collection.get(where={"document_id": document_id})
+        if existing['ids']:
+            collection.delete(ids=existing['ids'])
+    except Exception:
+        pass

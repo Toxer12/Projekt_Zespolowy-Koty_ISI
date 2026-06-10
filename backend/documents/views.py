@@ -11,8 +11,7 @@ from users.auth import CookieJWTAuthentication
 from projects.models import Project, ProjectMember
 from documents.models import Document, Chunk
 from documents.serializers import DocumentUploadSerializer, DocumentSerializer, ChunkSerializer
-from documents.tasks import process_document, run_semantic_search_task
-from documents.tasks import reembed_chunk_task
+from documents.tasks import process_document, run_semantic_search_task, reembed_chunk_task, delete_chunk_from_chroma_task, delete_document_from_chroma_task
 
 def _get_project_role(project, user):
     """Returns 'owner', 'admin', 'editor', 'viewer', or None."""
@@ -83,17 +82,12 @@ class DocumentDetailView(APIView):
         doc, role = self._get_doc_and_role(request, pk)
         if role not in ('owner', 'admin', 'editor'):
             raise PermissionDenied("Nie masz uprawnień do usuwania dokumentów.")
-        try:
-            from documents.embeddings import get_chroma_client, get_or_create_collection
-            client     = get_chroma_client()
-            collection = get_or_create_collection(client)
-            existing   = collection.get(where={"document_id": str(doc.pk)})
-            if existing['ids']:
-                collection.delete(ids=existing['ids'])
-        except Exception:
-            pass
+
+        doc_id = str(doc.pk)
         doc.file.delete(save=False)
         doc.delete()
+        delete_document_from_chroma_task.delay(doc_id)
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -121,15 +115,10 @@ class ChunkUpdateView(APIView):
         if role not in ('owner', 'admin', 'editor'):
             raise PermissionDenied("Nie masz uprawnień do usuwania chunków.")
 
-        try:
-            from documents.embeddings import get_chroma_client, get_or_create_collection
-            client = get_chroma_client()
-            collection = get_or_create_collection(client)
-            collection.delete(ids=[str(chunk.pk)])
-        except Exception:
-            pass
-
+        chunk_id = str(chunk.pk)
         chunk.delete()
+        delete_chunk_from_chroma_task.delay(chunk_id)
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def patch(self, request, pk):
