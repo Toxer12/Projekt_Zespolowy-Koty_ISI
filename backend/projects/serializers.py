@@ -21,13 +21,18 @@ class ProjectSerializer(serializers.ModelSerializer):
         default=list,
         write_only=True,
     )
-    owner   = serializers.StringRelatedField(read_only=True)
-    my_role = serializers.SerializerMethodField()
+    owner        = serializers.StringRelatedField(read_only=True)
+    my_role      = serializers.SerializerMethodField()
+    is_favorited = serializers.SerializerMethodField()
 
     class Meta:
         model  = Project
-        fields = ('id', 'name', 'visibility', 'tags', 'owner', 'my_role', 'created_at', 'updated_at')
-        read_only_fields = ('id', 'owner', 'my_role', 'created_at', 'updated_at')
+        fields = (
+            'id', 'name', 'visibility', 'tags',
+            'owner', 'my_role', 'is_favorited',
+            'created_at', 'updated_at',
+        )
+        read_only_fields = ('id', 'owner', 'my_role', 'is_favorited', 'created_at', 'updated_at')
         extra_kwargs = {
             'name': {
                 'error_messages': {
@@ -49,6 +54,12 @@ class ProjectSerializer(serializers.ModelSerializer):
             return instance.members.get(user=user).role
         except ProjectMember.DoesNotExist:
             return None
+
+    def get_is_favorited(self, instance):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return instance.favorited_by.filter(user=request.user).exists()
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
@@ -82,25 +93,25 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 class ProjectMemberSerializer(serializers.ModelSerializer):
     user_id    = serializers.IntegerField(source='user.id', read_only=True)
-    user_name  = serializers.CharField(source='user.username', read_only=True)
+    user_name  = serializers.CharField(source='user.name', read_only=True)
     user_email = serializers.CharField(source='user.email', read_only=True)
 
     class Meta:
-        model  = ProjectMember
-        fields = ('id', 'user_id', 'user_name', 'user_email', 'role', 'added_at')
-        read_only_fields = fields
+        model            = ProjectMember
+        fields           = ('id', 'user_id', 'user_name', 'user_email', 'role', 'added_at')
+        read_only_fields = ('id', 'user_id', 'user_name', 'user_email', 'added_at')
 
 
 class ProjectInviteSerializer(serializers.ModelSerializer):
-    project_id      = serializers.IntegerField(source='project.id', read_only=True)
+    project_id      = serializers.UUIDField(source='project.id', read_only=True)
     project_name    = serializers.CharField(source='project.name', read_only=True)
-    invited_by_name = serializers.CharField(source='invited_by.username', read_only=True)
+    invited_by_name = serializers.CharField(source='invited_by.name', read_only=True)
     invitee_id      = serializers.IntegerField(source='invitee.id', read_only=True)
-    invitee_name    = serializers.CharField(source='invitee.username', read_only=True)
+    invitee_name    = serializers.CharField(source='invitee.name', read_only=True)
 
     class Meta:
-        model  = ProjectInvite
-        fields = (
+        model            = ProjectInvite
+        fields           = (
             'id', 'project_id', 'project_name',
             'invited_by_name', 'invitee_id', 'invitee_name',
             'role', 'status', 'created_at', 'responded_at',

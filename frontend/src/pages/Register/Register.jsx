@@ -4,7 +4,7 @@ import { Navigate, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../App";
 import "./Register.css";
 function Register() {
-  const [form, setForm] = useState({ username: "", email: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -42,7 +42,7 @@ function Register() {
     <div className="container">
       <h1>Rejestracja</h1>
       <form className="form" onSubmit={handleSubmit}>
-        <input className="input" name="username" placeholder="Nazwa użytkownika" onChange={handleChange} required />
+        <input className="input" name="name" placeholder="Nazwa użytkownika" onChange={handleChange} required />
         <input className="input" name="email" type="email" placeholder="Email" onChange={handleChange} required />
         <input className="input" name="password" type="password" placeholder="Hasło" onChange={handleChange} required />
         <button className="button" type="submit">Zarejestruj się</button>

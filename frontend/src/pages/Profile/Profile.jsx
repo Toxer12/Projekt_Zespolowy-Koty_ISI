@@ -48,6 +48,17 @@ function Profile() {
                   <span className="info-label">Email</span>
                   <span className="info-value">{user.email}</span>
                 </div>
+
+
+                <button className="action-btn" onClick={() => navigate("/profile/change-name")}>
+                  Zmień nazwę użytkownika
+                </button>
+
+                <button className="action-btn" onClick={() => navigate("/profile/change-email")}>
+                  Zmień email
+                </button>
+
+
               </>
             )}
         </div>

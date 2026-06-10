@@ -18,8 +18,12 @@ import NewProject        from "./pages/NewProject/NewProject";
 import ProjectDetail     from "./pages/ProjectDetail/ProjectDetail";
 import Explore           from "./pages/Explore/Explore";
 import Invites           from "./pages/Invites/Invites";
+import Search            from "./pages/Search/Search";
 
 import ProtectedRoute    from "./ProtectedRoute";
+
+import ChangeName from "./pages/ChangeName/ChangeName";
+import ChangeEmail from "./pages/ChangeEmail/ChangeEmail";
 
 const AuthContext = createContext();
 
@@ -78,7 +82,10 @@ function App() {
           <Route path="/projects/:id"    element={protect(ProjectDetail)} />
           <Route path="/explore"         element={protect(Explore)} />
           <Route path="/invites"         element={protect(Invites)} />
+          <Route path="/search"          element={protect(Search)} />
           <Route path="/profile"         element={protect(Profile)} />
+          <Route path="/profile/change-name" element={protect(ChangeName)} />
+          <Route path="/profile/change-email" element={protect(ChangeEmail)} />
           <Route path="/change-password" element={protect(ChangePassword)} />
 
           <Route path="*" element={<Navigate to="/login" />} />

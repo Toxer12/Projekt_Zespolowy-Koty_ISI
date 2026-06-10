@@ -248,3 +248,41 @@
   color: #aaa;
   white-space: nowrap;
 }
+/* Add these to your existing Projects.css */
+
+.show-more-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.show-more-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  transition: background 0.15s;
+}
+
+.show-more-btn {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #bbb;
+  white-space: nowrap;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: #fff;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.show-more-divider:hover .show-more-btn {
+  color: var(--sidebar-accent);
+  border-color: var(--sidebar-accent);
+}
+
+.show-more-divider:hover .show-more-line {
+  background: var(--sidebar-accent);
+}

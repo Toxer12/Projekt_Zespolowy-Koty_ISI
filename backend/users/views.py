@@ -4,7 +4,7 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authentication import SessionAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
@@ -16,20 +16,23 @@ from django.core.exceptions import ValidationError
 from django.utils.encoding import force_bytes
 from django.core.mail import send_mail
 from django.urls import reverse
+from django.conf import settings
 
-from users.serializers import UserSerializer, AuthTokenSerializer, ChangePasswordSerializer
+from users.serializers import UserSerializer, AuthTokenSerializer, ChangePasswordSerializer, ChangeNameSerializer, ChangeEmailSerializer
 
 from users.auth import CookieJWTAuthentication
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = UserSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
     def perform_create(self, serializer):
         user = serializer.save()
 
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-        activation_link = f"http://localhost:8000/api/users/activate/{uid}/{token}/"
+        activation_link = f"{settings.BACKEND_URL}/api/users/activate/{uid}/{token}/"
         try:
             send_mail(
                 subject="Activate your account",
@@ -43,22 +46,24 @@ class RegisterView(generics.CreateAPIView):
 from django.shortcuts import redirect
 
 class ActivateUserView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
     def get(self, request, uidb64, token):
         try:
             uid = urlsafe_base64_decode(uidb64).decode()
             user = get_user_model().objects.get(pk=uid)
         except Exception:
-            return redirect("http://localhost:5173/activation-error")
+            return redirect(f"{settings.FRONTEND_URL}/activation-error")
         if user.is_active:
-            return redirect("http://localhost:5173/already-activated")
+            return redirect(f"{settings.FRONTEND_URL}/already-activated")
         if not default_token_generator.check_token(user, token):
-            return redirect("http://localhost:5173/activation-error")
+            return redirect(f"{settings.FRONTEND_URL}/activation-error")
         user.is_active = True
         user.save()
-        return redirect("http://localhost:5173/login?activated=1")
+        return redirect(f"{settings.FRONTEND_URL}/login?activated=1")
 
 class LoginView(APIView):
-    authentication_classes = (SessionAuthentication,)
+    authentication_classes = []
     def post(self, request):
         serializer = AuthTokenSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
@@ -96,7 +101,7 @@ class LoginView(APIView):
         return response
 
 class RefreshView(APIView):
-    authentication_classes = (SessionAuthentication,)
+    authentication_classes = []
     def post(self, request):
         refresh_token = request.COOKIES.get('refresh_token')
         if not refresh_token:
@@ -125,7 +130,7 @@ class RefreshView(APIView):
         return response
 
 class LogoutView(APIView):
-    authentication_classes = (SessionAuthentication,)
+    authentication_classes = []
 
     def post(self, request):
         refresh_token = request.COOKIES.get('refresh_token')
@@ -162,6 +167,44 @@ class ChangePasswordView(APIView):
 
         return response
 
+
+class ChangeNameView(APIView):
+    authentication_classes = (CookieJWTAuthentication, SessionAuthentication)
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangeNameSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
+        serializer.is_valid(raise_exception=True)
+        serializer.update(request.user, serializer.validated_data)
+
+        return Response(
+            {"message": "Username changed successfully"},
+            status=status.HTTP_200_OK
+        )
+
+class ChangeEmailView(APIView):
+    authentication_classes = (CookieJWTAuthentication, SessionAuthentication)
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangeEmailSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
+        serializer.is_valid(raise_exception=True)
+        serializer.update(request.user, serializer.validated_data)
+
+        return Response(
+            {"message": "Email changed successfully"},
+            status=status.HTTP_200_OK
+        )
+
+
 class PasswordResetRequestView(APIView):
     authentication_classes = []
     permission_classes = []
@@ -175,7 +218,7 @@ class PasswordResetRequestView(APIView):
 
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-        link = f"http://localhost:5173/reset-password/{uid}/{token}/"
+        link = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
 
         try:
             send_mail(
@@ -251,5 +294,5 @@ class MyView(APIView):
 
     def get(self, request):
         return Response({'email': request.user.email,
-                         'username': request.user.username,})
+                         'username': request.user.name,})
 

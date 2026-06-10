@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from documents.models import Document, Chunk
 
-ALLOWED_EXTENSIONS  = {'pdf', 'txt'}
-MAX_FILE_SIZE       = 10 * 1024 * 1024
+ALLOWED_EXTENSIONS = {'pdf', 'txt'}
+MAX_FILE_SIZE      = 10 * 1024 * 1024
 
 
 class ChunkSerializer(serializers.ModelSerializer):
@@ -13,7 +13,7 @@ class ChunkSerializer(serializers.ModelSerializer):
 
 class DocumentUploadSerializer(serializers.ModelSerializer):
     file       = serializers.FileField()
-    project_id = serializers.IntegerField(write_only=True)
+    project_id = serializers.UUIDField(write_only=True)  # was IntegerField
     chunk_type = serializers.ChoiceField(
         choices=['fixed', 'sentence'],
         default='sentence',
@@ -57,8 +57,8 @@ class DocumentUploadSerializer(serializers.ModelSerializer):
 
 
 class DocumentSerializer(serializers.ModelSerializer):
-    file_url       = serializers.SerializerMethodField()
-    chunk_count    = serializers.SerializerMethodField()
+    file_url    = serializers.SerializerMethodField()
+    chunk_count = serializers.SerializerMethodField()
 
     class Meta:
         model  = Document

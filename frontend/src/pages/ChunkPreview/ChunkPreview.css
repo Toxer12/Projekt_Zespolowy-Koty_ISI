@@ -117,3 +117,95 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+/* Add these to your existing ChunkPreview.css */
+
+.chunk-edit-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  color: #555;
+  font-size: 0.68rem;
+  font-family: 'DM Sans', sans-serif;
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.chunk-edit-btn:hover {
+  color: #aaa;
+  border-color: #444;
+}
+
+.chunk-edit-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.chunk-textarea {
+  width: 100%;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  color: #ccc;
+  font-size: 0.78rem;
+  font-family: 'DM Sans', sans-serif;
+  line-height: 1.55;
+  padding: 0.5rem 0.65rem;
+  resize: vertical;
+  outline: none;
+}
+
+.chunk-textarea:focus {
+  border-color: #444;
+}
+
+.chunk-edit-error {
+  font-size: 0.72rem;
+  color: #f87171;
+  margin: 0;
+}
+
+.chunk-edit-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chunk-save-btn {
+  background: #1a3a1a;
+  border: 1px solid #2a5a2a;
+  border-radius: 5px;
+  color: #4ade80;
+  font-size: 0.72rem;
+  font-family: 'DM Sans', sans-serif;
+  padding: 0.2rem 0.65rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.chunk-save-btn:hover:not(:disabled) {
+  background: #1e4a1e;
+}
+
+.chunk-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chunk-cancel-btn {
+  background: none;
+  border: 1px solid #2a2a2a;
+  border-radius: 5px;
+  color: #555;
+  font-size: 0.72rem;
+  font-family: 'DM Sans', sans-serif;
+  padding: 0.2rem 0.65rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.chunk-cancel-btn:hover:not(:disabled) {
+  color: #888;
+}
